@@ -10,13 +10,16 @@ if __name__ == '__main__':
     forecaster = UselessForecaster(cache_size, len(library))
     oftrl = OFTRL(forecaster, cache_size, len(library))
 
-    requests = ["a", "b", "c", "d", "e", "f", "g"]
+    requests = ["t", "z", "m", "a", "e", "k", "q"]
     request_vectors = []
+    # Convert requests into vectors
     for req in requests:
         idx = library.index(req)
         vector = np.zeros(len(library))
         vector[idx] = 1
         request_vectors.append(vector)
 
-    oftrl.get_all(request_vectors)
-    print(oftrl.results())
+
+    print(oftrl.get_all(request_vectors))
+    print(oftrl.prediction_err_log)
+    print(oftrl.regret())
