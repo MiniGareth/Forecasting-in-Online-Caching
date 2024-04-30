@@ -4,20 +4,79 @@ from forecasters.Forecaster import Forecaster
 class OFTRL:
 
     def __init__(self, predictor: Forecaster, cache_size: int, library_size:int):
-        self.predictor = predictor
-        self.prediction_log = []
-        self.prediction_err_log = []
-        self.cache = None
+        # Constants
         self.cache_size = cache_size
         self.library_size = library_size
-        self.cache_log = []
         self.sigma = 1/np.sqrt(self.cache_size)
-        self.reg_params = []
+
+        # Parameters
+        self.predictor = predictor
+        self.reg_params = []     # Regularizer parameters
+        self.prev_gradient = None
+        self.gradient = None
+
+        # Logs
+        self.prediction_log = []
+        self.prediction_err_log = []
+        self.cache_log = []
         self.request_log = []
+
+        # Initialize cache state
+        self.cache = None
+        self._initialize_cache()
+
+    def _initialize_cache(self):
+        """
+        Initialize the cache to store random files.
+        """
+        # Store first prediction to calculate prediction error later
+        self.prediction_log.append(self.predictor.predict())
+
+        self.cache = np.zeros(self.library_size)
+        for j in range(self.cache_size):
+            self.cache[j] = 1
+        np.random.shuffle(self.cache)
+        self.cache_log.append(self.cache)
+
 
 
     def get_next(self, request: np.ndarray) -> np.ndarray:
-        pass
+        """
+        Get the next cache state after receiving a request.
+        For request r_t this function returns the cache state x_t+1
+        :param request: A one-hot vector representing the file requested.
+        :return: A cache vector anticipating the next request.
+        """
+        # Get and store request info
+        self.request_log.append(request)
+        self.predictor.update(self.request_log)
+
+        # Calculate and store prediction error.
+        prediction = self.prediction_log[-1]
+        prediction_err = np.square(np.linalg.norm(request - prediction))
+        self.prediction_err_log.append(prediction_err)
+
+        # Calculate regularizer parameters differently depending if this is first request
+        if len(self.request_log) == 1:
+            self.reg_params.append(self.sigma * np.sqrt(prediction_err))
+            self.gradient = request
+
+        else:
+            self.reg_params.append(self.sigma * (
+                    np.sqrt(np.sum(self.prediction_err_log)) - np.sqrt(np.sum(self.prediction_err_log[:-1]))
+            ))
+            self.prev_gradient = self.gradient
+            self.gradient = self.prev_gradient + request
+
+        # The number of regularizer parameters should be the same as the cache log
+        assert len(self.reg_params) == len(self.cache_log)
+
+        # New prediction and next cache state
+        new_prediction = self.predictor.predict()
+        self.prediction_log.append(new_prediction)
+        self.assign_cache(new_prediction, self.gradient)
+
+        return self.cache
 
     def get_all(self, requests: list) -> list:
         """
@@ -25,45 +84,9 @@ class OFTRL:
         :param requests: List of requests in one-hot vector form.
         :return:  A list of cache vectors
         """
-        prev_gradient = 0
-        gradient = 0
-        # Iterate over all file requests
-        for req_idx in range(0, len(requests)):
-            # Get prediction
-            prediction = self.predictor.predict()
-            # For first request simply use a random cache
-            if req_idx == 0:
-                self.cache = np.zeros(self.library_size)
-                for j in range(self.cache_size):
-                    self.cache[j] = 1
-                np.random.shuffle(self.cache)
-                self.cache_log.append(self.cache)
-            # Otherwise assign cache based on prediction
-            else:
-                self.assign_cache(prediction, gradient)
-
-            # Get and store request info
-            request = requests[req_idx]
-            self.request_log.append(request)
-            self.predictor.update(self.request_log)
-
-            # Calculate and store prediction error.
-            prediction_err = np.square(np.linalg.norm(request - prediction))
-            self.prediction_err_log.append(prediction_err)
-
-            # Calculate regularizer parameters differently depending if this is first request
-            if req_idx == 0:
-                self.reg_params.append(self.sigma * np.sqrt(prediction_err))
-
-            else:
-                self.reg_params.append(self.sigma * (
-                        np.sqrt(np.sum(self.prediction_err_log)) - np.sqrt(np.sum(self.prediction_err_log[:-1]))
-                ))
-                prev_gradient = gradient
-                gradient = prev_gradient + request
-
-            # The number of regularizer parameters should be the same as the cache log
-            assert len(self.reg_params) == len(self.cache_log)
+        for req in requests:
+            # get_next already stores cache in cache log using the assign_cache function
+            self.get_next(req)
 
         return self.cache_log
 
