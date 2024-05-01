@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+import cvxpy as cp
 from forecasters.Forecaster import Forecaster
 class OFTRL:
 
@@ -97,29 +98,24 @@ class OFTRL:
         :param prediction: Prediction vector. A discrete probability distribution
         :param gradient: Gradient vector. A sum of all previous request vectors.
         """
-        max_reward = 0
-        max_cache = 0
-        # Take the cache configuration that gives the highest reward
-        for comb in itertools.combinations(range(self.library_size), self.cache_size):
-            # Initializing cache vector from combination tuple
-            cache = np.zeros(self.library_size)
-            for file_idx in comb:
-                cache[file_idx] = 1
-            # print(comb)
-            # print(cache)
-            # print("=======================================================================")
 
-            # Calculate sum of previous regularizers
-            regularizer = 0
-            for j in range(len(self.reg_params)):
-                regularizer += self.reg_params[j]/2 * np.square(np.linalg.norm(cache - self.cache_log[j]))
+        x = cp.Variable(self.library_size)
+        regularizer = cp.sum(np.array(self.reg_params) / 2 @
+                             cp.square(
+                                 cp.norm(
+                                     cp.vstack([x for i in range(len(self.cache_log))]) - np.array(self.cache_log),
+                                     axis=1
+                                 )))
+        # Reward of a hit is simply the dot product
+        reward = x @ (prediction + gradient)
+        objective = cp.Maximize(reward - regularizer)
+        constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
 
-            # Calculate reward
-            reward = self.reward(cache, prediction + gradient) - regularizer
-            if reward > max_reward:
-                max_reward = reward
-                max_cache = cache
+        prob = cp.Problem(objective, constraints)
+        prob.solve()
+        max_cache = x.value
 
+        # Store and log the new assigned cache
         self.cache = max_cache
         self.cache_log.append(self.cache)
 
@@ -138,19 +134,25 @@ class OFTRL:
         static_best_cache = None
         best_reward = 0
         # Get static best cache by finding the cache configuration with highest reward
-        for comb in itertools.combinations(range(self.library_size), self.cache_size):
-            # Initializing cache vector from combination tuple
-            cache = np.zeros(self.library_size)
-            for file_idx in comb:
-                cache[file_idx] = 1
+        for req in self.request_log:
+            # Finds best cache for a particular request
+            x = cp.Variable(self.library_size)
+            regularizer = cp.sum(np.array(self.reg_params) / 2 @
+                                 cp.square(
+                                     cp.norm(
+                                         cp.vstack([x for i in range(len(self.cache_log) - 1)]) - np.array(self.cache_log[:-1]),
+                                         axis=1
+                                     )))
+            # Reward of a hit is simply the dot product
+            reward_expr = x @ np.array(req)
+            objective = cp.Maximize(reward_expr)
+            constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
 
-            # Get sum of reward with this cache vector and save it if it is the best one yet
-            reward = 0
-            for req in self.request_log:
-                reward += self.reward(cache, req)
+            prob = cp.Problem(objective, constraints)
+            reward = prob.solve()
+
             if reward > best_reward:
-                best_reward = reward
-                static_best_cache = cache
+                static_best_cache = x.value
 
 
         regret = 0

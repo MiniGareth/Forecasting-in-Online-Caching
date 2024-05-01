@@ -1,4 +1,6 @@
 # Press the green button in the gutter to run the script.
+import random
+
 import numpy as np
 
 from forecasters.UselessForecaster import UselessForecaster
@@ -10,7 +12,7 @@ if __name__ == '__main__':
     forecaster = UselessForecaster(cache_size, len(library))
     oftrl = OFTRL(forecaster, cache_size, len(library))
 
-    requests = ["t", "z", "m", "a", "e", "k", "q"]
+    requests = [library[random.randint(0, len(library) - 1)] for i in range(100)]
     request_vectors = []
     # Convert requests into vectors
     for req in requests:
@@ -19,7 +21,14 @@ if __name__ == '__main__':
         vector[idx] = 1
         request_vectors.append(vector)
 
-
-    print(oftrl.get_all(request_vectors))
-    print(oftrl.prediction_err_log)
-    print(oftrl.regret())
+    regret_list = []
+    regret_t_list = []
+    for i, req in enumerate(request_vectors):
+        print(f"Request {req}")
+        oftrl.get_next(req)
+        regret = oftrl.regret()
+        regret_list.append(regret)
+        regret_t_list.append(regret/ i)
+    # print(oftrl.prediction_err_log)
+    print(regret_list)
+    print(regret_t_list)
