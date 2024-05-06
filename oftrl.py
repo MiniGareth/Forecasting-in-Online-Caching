@@ -100,15 +100,15 @@ class OFTRL:
         """
 
         x = cp.Variable(self.library_size)
-        regularizer = cp.sum(np.array(self.reg_params) / 2 @
+        regularizer = cp.sum(cp.multiply(np.array(self.reg_params) / 2,
                              cp.square(
                                  cp.norm(
                                      cp.vstack([x for i in range(len(self.cache_log))]) - np.array(self.cache_log),
                                      axis=1
-                                 )))
+                                 ))))
         # Reward of a hit is simply the dot product
-        reward = x @ (prediction + gradient)
-        objective = cp.Maximize(reward - regularizer)
+        reward_expr = self.reward_expr(x, prediction + gradient)
+        objective = cp.Maximize(reward_expr - regularizer)
         constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
 
         prob = cp.Problem(objective, constraints)
@@ -130,31 +130,22 @@ class OFTRL:
         """
         return np.dot(cache, request)
 
+    def reward_expr(self, cache: cp.Variable, request: np.ndarray) -> cp.Expression:
+        return request @ cache
+
     def regret(self) -> float:
-        static_best_cache = None
-        best_reward = 0
-        # Get static best cache by finding the cache configuration with highest reward
-        for req in self.request_log:
-            # Finds best cache for a particular request
-            x = cp.Variable(self.library_size)
-            regularizer = cp.sum(np.array(self.reg_params) / 2 @
-                                 cp.square(
-                                     cp.norm(
-                                         cp.vstack([x for i in range(len(self.cache_log) - 1)]) - np.array(self.cache_log[:-1]),
-                                         axis=1
-                                     )))
-            # Reward of a hit is simply the dot product
-            reward_expr = x @ np.array(req)
-            objective = cp.Maximize(reward_expr)
-            constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
+        # Get static best cache
+        x = cp.Variable(self.library_size)
+        reward_expr = self.reward_expr(x, np.array(self.request_log))
+        # Find the cache x such that we maximize the sum of rewards
+        objective = cp.Maximize(cp.sum(reward_expr))
+        constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
 
-            prob = cp.Problem(objective, constraints)
-            reward = prob.solve()
+        prob = cp.Problem(objective, constraints)
+        best_reward = prob.solve()
+        static_best_cache = x.value
 
-            if reward > best_reward:
-                static_best_cache = x.value
-
-
+        # Calculate regret
         regret = 0
         for cache, req in zip(self.cache_log, self.request_log):
              regret += self.reward(static_best_cache, req) - self.reward(cache, req)

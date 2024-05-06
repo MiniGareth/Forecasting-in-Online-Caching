@@ -1,10 +1,12 @@
 # Press the green button in the gutter to run the script.
 import random
+import time
+
 import numpy as np
 
 from forecasters.UselessForecaster import UselessForecaster
 from oftrl import OFTRL
-from plotters import plot_regret, plot_regret_over_time
+from plotters import plot_cummulative_regret, plot_average_regret
 
 
 def alphabet_test():
@@ -35,11 +37,12 @@ def alphabet_test():
     print(regret_list)
     print(regret_t_list)
 
-    plot_regret(regret_list, title="Alphabets with C = 5")
-    plot_regret_over_time(regret_t_list, title="Alphabets with C = 5")
+    plot_cummulative_regret(regret_list, title="Alphabets with C = 5")
+    plot_average_regret(regret_t_list, title="Alphabets with C = 5")
 
 def arbitrary_random_test(cache_size, library_size, num_of_requests):
     print(f"Cache size {cache_size}, Library size {library_size}, {num_of_requests} requests")
+    # Create random requests
     request_vectors = []
     for i in range(num_of_requests):
         idx = random.randint(0, library_size - 1)
@@ -47,20 +50,32 @@ def arbitrary_random_test(cache_size, library_size, num_of_requests):
         vector[idx] = 1
         request_vectors.append(vector)
 
+    # Initialize OFTRL
     predictor = UselessForecaster(cache_size, library_size)
     oftrl = OFTRL(predictor, cache_size, library_size)
     regret_list = []
+
+    # Calculate regret for every request
+    get_next_time = 0
+    regret_time = 0
     for i, req in enumerate(request_vectors):
         print(i)
+        start = time.time() * 1000
         oftrl.get_next(req)
+        get_next_time += int(time.time() * 1000 - start)
         regret = oftrl.regret()
+        regret_time += int(time.time() * 1000 - start)
         regret_list.append(regret)
 
-    plot_regret(regret_list, title=f"Random requests with C = {cache_size}, L = {library_size} ")
-    plot_regret_over_time(regret_list, title=f"Random requests with C = {cache_size}, L = {library_size}")
+    print("Cache assignment time: " + str(get_next_time) + "ms")
+    print("Regret calculation time: " + str(regret_time) + "ms")
+    plot_cummulative_regret(regret_list, title=f"Random requests with C = {cache_size}, L = {library_size} ")
+    plot_average_regret(regret_list, title=f"Random requests with C = {cache_size}, L = {library_size}")
 
 
 if __name__ == '__main__':
+    start_time = time.time() * 1000
     # alphabet_test()
-    arbitrary_random_test(10, 100, 100)
+    arbitrary_random_test(10, 100, 500)
     arbitrary_random_test(75, 5000, 100)
+    print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")
