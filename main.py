@@ -4,16 +4,19 @@ import time
 
 import numpy as np
 
+from forecasters.RecommenderForecaster import RecommenderForecaster
 from forecasters.UselessForecaster import UselessForecaster
 from oftrl import OFTRL
 from plotters import plot_cummulative_regret, plot_average_regret
+from recommender.kNNRecommender import kNNRecommender
 
 
 def alphabet_test():
     cache_size = 5
     library = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
                "v", "w", "x", "y", "z"]
-    forecaster = UselessForecaster(cache_size, len(library))
+    # forecaster = UselessForecaster(cache_size, len(library))
+    forecaster = RecommenderForecaster(kNNRecommender(1), library_size=len(library))
     oftrl = OFTRL(forecaster, cache_size, len(library))
 
     requests = [library[random.randint(0, len(library) - 1)] for i in range(100)]
@@ -51,7 +54,8 @@ def arbitrary_random_test(cache_size, library_size, num_of_requests):
         request_vectors.append(vector)
 
     # Initialize OFTRL
-    predictor = UselessForecaster(cache_size, library_size)
+    # predictor = UselessForecaster(cache_size, library_size)
+    predictor = RecommenderForecaster(kNNRecommender(1), library_size)
     oftrl = OFTRL(predictor, cache_size, library_size)
     regret_list = []
 
@@ -63,6 +67,8 @@ def arbitrary_random_test(cache_size, library_size, num_of_requests):
         start = time.time() * 1000
         oftrl.get_next(req)
         get_next_time += int(time.time() * 1000 - start)
+
+        start = time.time() * 1000
         regret = oftrl.regret()
         regret_time += int(time.time() * 1000 - start)
         regret_list.append(regret)
@@ -77,5 +83,5 @@ if __name__ == '__main__':
     start_time = time.time() * 1000
     # alphabet_test()
     arbitrary_random_test(10, 100, 500)
-    arbitrary_random_test(75, 5000, 100)
+    # arbitrary_random_test(75, 5000, 100)
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")
