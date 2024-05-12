@@ -4,6 +4,9 @@ import numpy as np
 
 
 class Forecaster(ABC):
+    def __init__(self, horizon):
+        self.horizon = horizon
+
     @abstractmethod
     def predict(self) -> np.ndarray:
         pass

@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
@@ -6,6 +8,9 @@ from sklearn.neighbors import NearestNeighbors
 from recommender.Recommender import CollaborativeFilteringRecommender
 
 class kNNRecommender(CollaborativeFilteringRecommender):
+    """
+    A collaborative filtering recommender using the KNN algorithm.
+    """
     def __init__(self, k:int, metric="cosine"):
         self.k = k
         self.metric = metric
@@ -40,8 +45,6 @@ class kNNRecommender(CollaborativeFilteringRecommender):
         self.items = items
         self.ratings = ratings
         self._create_utility_matrix()
-        # a = self.utility_matrix.nnz / (self.utility_matrix.shape[0] * self.utility_matrix.shape[1])
-        # print(self.utility_matrix)
         # Train kNN algorithms
         # k + 1 is used for n_neigbours here because the algorithm includes the input as one of the kNNs
         self._user_kNN = NearestNeighbors(n_neighbors=self.k + 1, algorithm="brute", metric=self.metric)
