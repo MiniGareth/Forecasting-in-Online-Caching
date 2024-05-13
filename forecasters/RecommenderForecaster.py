@@ -46,6 +46,9 @@ class RecommenderForecaster(Forecaster):
         recommender. This conversion is based on Alvaro Gomez Time Series Forecasting by Recommendation: An Empirical Analysis on Amazon Marketplace (2019)
         :param history: List of vectors (requests) that have been made.
         """
+        if len(history) == 0:
+            return
+
         self.latest_history = [list(v).index(1) for v in history]
         ts0 = pd.DataFrame(np.round(self.latest_history))
         ts1 = ts0.shift(self.horizon)

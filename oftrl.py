@@ -3,7 +3,10 @@ import itertools
 import cvxpy as cp
 from forecasters.Forecaster import Forecaster
 class OFTRL:
-
+    """
+    This class is an implementation of the OFTRL algorithm for continuous variables.
+    Naram Mhaisen Optimistic No-Regret Algorithms for Discrete Caching
+    """
     def __init__(self, predictor: Forecaster, cache_size: int, library_size:int):
         # Constants
         self.cache_size = cache_size
