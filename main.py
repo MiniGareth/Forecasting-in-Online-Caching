@@ -259,7 +259,10 @@ if __name__ == '__main__':
     # arbitrary_random_test(10, 100, 500)
     # arbitrary_random_test(75, 5000, 20)
     # oftrl_diff_predict_acc(75, 5000, 100)
-    oftrl_recommender_uniform(75, 5000, 100, history_size=50)
+    oftrl_recommender_uniform(75, 5000, 100, history_size=0)
+    oftr_recommender_zipf(75, 5000, 100, history_size=0)
+    oftr_recommender_normal(75, 5000, 100, history_size=0)
+    oftrl_recommender_uniform(75, 5000, 100, history_size=0)
     oftr_recommender_zipf(75, 5000, 100, history_size=50)
     oftr_recommender_normal(75, 5000, 100, history_size=50)
 

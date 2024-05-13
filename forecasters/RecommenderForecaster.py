@@ -34,7 +34,10 @@ class RecommenderForecaster(Forecaster):
             # Get top N recommendataions based on the last request made.
             recommendations = self.recommender.recommend(self.latest_history[-1])
             result = np.zeros(self.library_size)
-            result[int(recommendations[0])] = 1
+            # Get the average of the top N recommendations
+            for rec in recommendations:
+                result[int(rec)] += 1
+            result = result/np.sum(result)  # Normalize the result vector
 
         return result
 
