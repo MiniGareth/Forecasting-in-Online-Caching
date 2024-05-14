@@ -1,9 +1,11 @@
+import random
+
 import numpy as np
 
 from forecasters.Forecaster import Forecaster
 
 
-class UselessForecaster(Forecaster):
+class RandomForecaster(Forecaster):
     """
     This class represents a forecaster that does nothing except predict the first file
     """
@@ -13,7 +15,8 @@ class UselessForecaster(Forecaster):
         self.library_size = library_size
 
     def predict(self):
-        return np.array([1 if i == 0 else 0 for i in range(self.library_size)])
+        idx = random.randint(0, self.library_size - 1)
+        return np.array([1 if i == idx else 0 for i in range(self.library_size)])
 
     def update(self, history):
         pass
