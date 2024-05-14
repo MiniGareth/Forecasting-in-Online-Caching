@@ -1,6 +1,7 @@
 # Press the green button in the gutter to run the script.
 import random
 import time
+from statsmodels.tsa.arima.model import ARIMA
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -166,7 +167,7 @@ def oftrl_compare_two(requests, history, forecaster1, forecaster2, cache_size, l
         vector[idx] = 1
         request_vectors.append(vector)
 
-    print(request_vectors)
+    # print(request_vectors)
 
     # Initialize OFTRL
     forecaster1.update(history_vectors)
@@ -176,6 +177,8 @@ def oftrl_compare_two(requests, history, forecaster1, forecaster2, cache_size, l
 
     regret_list1 = oftrl_regret_list(oftrl1, request_vectors)
     regret_list2 = oftrl_regret_list(oftrl2, request_vectors)
+    print(regret_list1)
+    print(regret_list2)
 
     return regret_list1, regret_list2
 
@@ -189,7 +192,7 @@ def oftrl_recommender_uniform(cache_size, library_size, num_of_requests, history
 
     # The two forecasters to compare
     predictor1 = UselessForecaster(cache_size, library_size)
-    predictor2 = RecommenderForecaster(kNNRecommender(1), library_size)
+    predictor2 = RecommenderForecaster(kNNRecommender(10), library_size)
 
     # Get the two regret lists from 2 different forecasters applied to OFTRL
     regret_list1, regret_list2 = oftrl_compare_two(requests, history, predictor1, predictor2, cache_size,
@@ -227,14 +230,15 @@ def oftr_recommender_zipf(cache_size, library_size, num_of_requests, history_siz
     plt.legend(loc="upper right")
     plt.show()
 
-def oftr_recommender_normal(cache_size, library_size, num_of_requests, history_size=50):
+def oftrl_recommender_normal(cache_size, library_size, num_of_requests, history_size=50):
     print("========================================================================")
     print(f"Cache size {cache_size}, Library size {library_size}, {num_of_requests} requests")
     # Create random requests from Normal distribution
     history = np.random.normal(library_size/2, library_size/6, size=history_size)
     history = history[history < library_size][history >= 0]
     requests = np.random.normal(library_size/2, library_size/6, size=num_of_requests)
-    requests = requests[requests < library_size][requests >= 0]
+    requests = requests[requests < library_size]
+    requests = requests[requests >= 0]
     print(requests)
     print(history)
 
@@ -252,6 +256,34 @@ def oftr_recommender_normal(cache_size, library_size, num_of_requests, history_s
     plt.legend(loc="upper right")
     plt.show()
 
+def oftrl_recommender_arma(cache_size, library_size, num_of_requests, history_size=50):
+    print("========================================================================")
+    print(f"Cache size {cache_size}, Library size {library_size}, {num_of_requests} requests")
+    # Create random requests from Normal distribution
+    history = np.random.normal(library_size / 2, library_size / 6, size=history_size)
+    history = history[history < library_size][history >= 0]
+    arima = ARIMA(history, order=(1,0,1))
+    arima_res = arima.fit()
+    requests = arima_res.forecast(num_of_requests)
+    requests = requests[requests < library_size]
+    requests = requests[requests >= 0]
+    print(requests)
+    print(history)
+
+    # The two forecasters to compare
+    predictor1 = UselessForecaster(cache_size, library_size)
+    predictor2 = RecommenderForecaster(kNNRecommender(1), library_size)
+
+    # Get the two regret lists from 2 different forecasters applied to OFTRL
+    regret_list1, regret_list2 = oftrl_compare_two(requests, history, predictor1, predictor2, cache_size,
+                                                   library_size)
+
+    plot_average_regret(regret_list1, label=f"Useless Forecaster")
+    plot_average_regret(regret_list2, label=f"Recommender Forecaster")
+    plt.title(f"Normal ARMA requests with C = {cache_size}, L = {library_size}, H ={history_size}")
+    plt.legend(loc="upper right")
+    plt.show()
+
 
 if __name__ == '__main__':
     start_time = time.time() * 1000
@@ -259,12 +291,12 @@ if __name__ == '__main__':
     # arbitrary_random_test(10, 100, 500)
     # arbitrary_random_test(75, 5000, 20)
     # oftrl_diff_predict_acc(75, 5000, 100)
-    oftrl_recommender_uniform(75, 5000, 100, history_size=0)
-    oftr_recommender_zipf(75, 5000, 100, history_size=0)
-    oftr_recommender_normal(75, 5000, 100, history_size=0)
-    oftrl_recommender_uniform(75, 5000, 100, history_size=0)
-    oftr_recommender_zipf(75, 5000, 100, history_size=50)
-    oftr_recommender_normal(75, 5000, 100, history_size=50)
-
+    # oftrl_recommender_uniform(75, 5000, 100, history_size=0)
+    # oftr_recommender_zipf(75, 5000, 100, history_size=0)
+    # oftr_recommender_normal(75, 5000, 100, history_size=0)
+    # oftrl_recommender_uniform(5, 250, 1000, history_size=50)
+    # oftr_recommender_zipf(5, 250, 1000, history_size=50)
+    # oftrl_recommender_normal(5, 250, 1000, history_size=50)
+    oftrl_recommender_arma(5, 250, 200, history_size=50)
     plt.show()
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

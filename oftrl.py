@@ -115,7 +115,7 @@ class OFTRL:
         constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
 
         prob = cp.Problem(objective, constraints)
-        prob.solve()
+        prob.solve(solver=cp.ECOS, abstol=0.0001, reltol=0.0001)
         max_cache = x.value
 
         # Store and log the new assigned cache
@@ -137,6 +137,10 @@ class OFTRL:
         return request @ cache
 
     def regret(self) -> float:
+        """
+        Returns the regret value based on the past requests and cache configurations.
+        :return: a float value representing the regret.
+        """
         # Get static best cache
         x = cp.Variable(self.library_size)
         reward_expr = self.reward_expr(x, np.array(self.request_log))
@@ -154,3 +158,10 @@ class OFTRL:
              regret += self.reward(static_best_cache, req) - self.reward(cache, req)
 
         return regret
+
+    def utility(self) -> float:
+        total_utility = 0
+        for cache, req in zip(self.cache_log, self.request_log):
+            total_utility += self.reward(cache, req)
+
+        return total_utility
