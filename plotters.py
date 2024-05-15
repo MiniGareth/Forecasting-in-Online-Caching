@@ -29,3 +29,37 @@ def plot_average_regret(regret_list, title=None, label=None):
     plt.xticks(np.arange(len(regret_list), step=len(regret_list)//10))
     plt.plot([regret / (i + 1) for i, regret in enumerate(regret_list)], label=label)
     # plt.show()
+
+def plot_average_utility(utility_list, title=None, label=None):
+    if title is None:
+        plt.title("Utility per request")
+    else:
+        plt.title(title)
+    plt.xlabel("Request nr.")
+    plt.ylabel(f"$U_T / T$")
+    plt.xticks(np.arange(len(utility_list), step=len(utility_list) // 10))
+    plt.plot([utility / (i + 1) for i, utility in enumerate(utility_list)], label=label)
+
+def plot_accuracy_bar(data: list, forecaster_list: list, distributions: list, title=None):
+    if len(data) != len(distributions):
+        raise ValueError("The number of distributions must match the number of accuracy lists in data")
+    if title is None:
+        plt.title("Accuracy per Forecaster")
+    else:
+        plt.title(title)
+
+    X_axis = np.arange(len(forecaster_list))
+
+    width = 0.8 / len(distributions)
+    loc = -1 * width * (len(distributions) - 1) / 2
+    for i in range(len(distributions)):
+        plt.bar(X_axis + loc, data[i], width, label=distributions[i])
+        loc += width
+
+    plt.xlabel("Forecasters")
+    plt.ylabel("Accuracy")
+    plt.yticks(np.arange(0, 1, step=0.1))
+    plt.xticks(X_axis, forecaster_list)
+    plt.legend(loc="upper right")
+
+# def plot_average_accuracy(forecaster_list: list, accuracy_over_time_list: list, title=None):

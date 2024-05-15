@@ -7,6 +7,7 @@ from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
 from matplotlib import pyplot as plt
 
+import utils
 from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
 from forecasters.RandomForecaster import RandomForecaster
@@ -151,21 +152,7 @@ def oftrl_regret_list(oftrl, request_vectors):
 
 def run_oftrl_regret(requests, history, forecaster, cache_size, library_size):
     # Shuffling so it is not always guaranteed that the file 1 will have the highest chance of getting requested.
-    shuffled_range = np.arange(0, library_size)
-    np.random.shuffle(shuffled_range)
-    request_vectors = []
-    history_vectors = []
-    for req in history:
-        idx = shuffled_range[int(req)]
-        vector = np.zeros(library_size)
-        vector[idx] = 1
-        history_vectors.append(vector)
-
-    for req in requests:
-        idx = shuffled_range[int(req)]
-        vector = np.zeros(library_size)
-        vector[idx] = 1
-        request_vectors.append(vector)
+    request_vectors, history_vectors = utils.convert_to_vectors(requests, history, library_size)
 
     # print(request_vectors)
 
@@ -178,6 +165,8 @@ def run_oftrl_regret(requests, history, forecaster, cache_size, library_size):
     return regret_list
 
 def graph_oftrl_regret(forecasters_options, distribution_options, cache_size, library_size, num_of_requests, history_size=50):
+    print("========================================================================")
+    print(f"Cache size {cache_size}, Library size {library_size}, {num_of_requests} requests")
     forecaster_list = []
     for f in forecasters_options:
         if f == "random":
@@ -187,36 +176,7 @@ def graph_oftrl_regret(forecasters_options, distribution_options, cache_size, li
             forecaster = RecommenderForecaster(kNNRecommender(10), library_size)
             forecaster_list.append(forecaster)
 
-    history = None
-    requests = None
-    # Create history and requests based on the chosen distribution
-    if distribution_options == "uniform":
-        requests = np.random.uniform(0, library_size, size=num_of_requests)
-        history = np.random.uniform(0, library_size, size=history_size)
-    elif distribution_options == "zipf":
-        zipf_param = 1.1
-        history = np.random.zipf(zipf_param, size=history_size)
-        history = history - 1
-        history = history[history < library_size]
-        requests = np.random.zipf(zipf_param, size=num_of_requests)
-        requests = requests - 1
-        requests = requests[requests < library_size]
-    elif distribution_options == "normal":
-        history = np.random.normal(library_size / 2, library_size / 6, size=history_size)
-        history = history[history < library_size][history >= 0]
-        requests = np.random.normal(library_size / 2, library_size / 6, size=num_of_requests)
-        requests = requests[requests < library_size]
-        requests = requests[requests >= 0]
-    elif distribution_options == "arima":
-        history = np.random.normal(library_size / 2, library_size / 6, size=history_size)
-        history = history[history < library_size][history >= 0]
-        arima = ARIMA(history, order=(1, 0, 1))
-        arima_res = arima.fit()
-        requests = arima_res.forecast(num_of_requests)
-        requests = requests[requests < library_size]
-        requests = requests[requests >= 0]
-    else:
-        raise ValueError("Distribution must be uniform, zipf, normal or arima.")
+    requests, history = utils.get_requests_from_distribution(distribution_options, library_size, num_of_requests, history_size)
 
     # Collect regrets of different OFTRL forecaster combinations.
     regret_list_list = []
@@ -230,8 +190,9 @@ def graph_oftrl_regret(forecasters_options, distribution_options, cache_size, li
 
     plt.title(f"{distribution_options} requests with C = {cache_size}, L = {library_size}, H ={history_size}")
     plt.legend(loc="upper right")
-    plt.savefig(f"new_plots/C-{cache_size}_L-{library_size}_H-{history_size}_N-{num_of_requests}_{distribution_options}_{datetime.datetime.now().strftime("%d%b%y%H%M")}.png")
+    plt.savefig(f"new_plots/{datetime.datetime.now().strftime('%d%b%y%H%M')}_C-{cache_size}_L-{library_size}_H-{history_size}_N-{num_of_requests}_{distribution_options}.png")
     plt.show()
+    plt.close()
 
 
 if __name__ == '__main__':
@@ -257,16 +218,16 @@ if __name__ == '__main__':
                        5, 250, 200, 50)
     graph_oftrl_regret(("random", "recommender"), "normal",
                        5, 250, 200, 50)
-    graph_oftrl_regret(("random", "recommender"), "arima",
-                       5, 250, 200, 50)
+    # graph_oftrl_regret(("random", "recommender"), "arima",
+    #                    5, 250, 200, 50)
 
-    graph_oftrl_regret(("random", "recommender"), "uniform",
-                       150, 10000, 10000, 50)
-    graph_oftrl_regret(("random", "recommender"), "zipf",
-                       150, 10000, 10000, 50)
-    graph_oftrl_regret(("random", "recommender"), "normal",
-                       150, 10000, 10000, 50)
-    graph_oftrl_regret(("random", "recommender"), "arima",
-                       150, 10000, 10000, 50)
-    plt.show()
+    # graph_oftrl_regret(("random", "recommender"), "uniform",
+    #                    150, 10000, 10000, 50)
+    # graph_oftrl_regret(("random", "recommender"), "zipf",
+    #                    150, 10000, 10000, 50)
+    # graph_oftrl_regret(("random", "recommender"), "normal",
+    #                    150, 10000, 10000, 50)
+    # graph_oftrl_regret(("random", "recommender"), "arima",
+    #                    150, 10000, 10000, 50)
+    # plt.show()
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

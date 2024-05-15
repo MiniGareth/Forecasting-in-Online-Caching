@@ -34,6 +34,9 @@ class ParrotForecaster(Forecaster):
             return v
 
     def update(self, history: list[np.ndarray]) -> None:
+        if len(history) == 0:
+            return
+
         for i in range(min(len(history), len(self.request_list))):
             if (history[i] != self.request_list[i]).all():
                 raise ValueError(f"The history of requests {history} does not match the future requests {self.request_list} in this Forecaster")
