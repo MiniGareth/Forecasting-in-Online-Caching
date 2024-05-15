@@ -1,5 +1,5 @@
 import numpy as np
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA
 
 
 def get_requests_from_distribution(distribution: str, library_size, num_of_requests, history_size):
@@ -24,7 +24,7 @@ def get_requests_from_distribution(distribution: str, library_size, num_of_reque
         requests = requests[requests < library_size]
         requests = requests[requests >= 0]
     elif distribution == "arima":
-        history = np.random.normal(library_size / 2, library_size / 6, size=history_size)
+        history = np.random.normal(library_size / 2, library_size / 6, size=max(100, history_size))
         history = history[history < library_size][history >= 0]
         arima = ARIMA(history, order=(1, 0, 1))
         arima_res = arima.fit()

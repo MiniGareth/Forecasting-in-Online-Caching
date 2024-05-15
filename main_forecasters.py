@@ -3,7 +3,7 @@ import datetime
 
 import numpy as np
 from matplotlib import pyplot as plt
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA
 
 import utils
 from forecasters.ParrotForecaster import ParrotForecaster
@@ -16,8 +16,10 @@ from recommender.kNNRecommender import kNNRecommender
 def all_forecasters_all_distributions(cache_size, library_size, num_of_requests, history_size):
     forecaster_names = ["Random Forecaster", "KNN Recommender", "Parrot 50"]
     accuracies_per_distribution = []
-    distributions = ["uniform", "zipf", "normal"]
+    distributions = ["uniform", "zipf", "normal", "arima"]
+    # distributions = ["arima"]
     for distribution in distributions:
+        print(f"Distribution: {distribution}")
         requests, history = utils.get_requests_from_distribution(distribution, library_size, num_of_requests, history_size)
         request_vectors, history_vectors = utils.convert_to_vectors(requests, history, library_size)
 
@@ -34,7 +36,7 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
             for req in request_vectors:
                 predictions.append(forecaster.predict())
                 forecaster_history.append(req)
-                forecaster.update(history_vectors)
+                forecaster.update(forecaster_history)
             # Calculate Score: Nr. of cache hits
             score = 0
             for i in range(len(predictions)):

@@ -23,4 +23,4 @@ module load py-pip
 python -m pip install --user cvxpy
 python -m pip install --user statsmodels
 
-srun python main.py > pi.log
+srun python main_forecasters.py > pi.log
