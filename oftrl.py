@@ -2,20 +2,23 @@ import numpy as np
 import itertools
 import cvxpy as cp
 from forecasters.Forecaster import Forecaster
+
+
 class OFTRL:
     """
     This class is an implementation of the OFTRL algorithm for continuous variables.
     Naram Mhaisen Optimistic No-Regret Algorithms for Discrete Caching
     """
-    def __init__(self, predictor: Forecaster, cache_size: int, library_size:int):
+
+    def __init__(self, predictor: Forecaster, cache_size: int, library_size: int):
         # Constants
         self.cache_size = cache_size
         self.library_size = library_size
-        self.sigma = 1/np.sqrt(self.cache_size)
+        self.sigma = 1 / np.sqrt(self.cache_size)
 
         # Parameters
         self.predictor = predictor
-        self.reg_params = []     # Regularizer parameters
+        self.reg_params = []  # Regularizer parameters
         self.prev_gradient = None
         self.gradient = None
 
@@ -41,8 +44,6 @@ class OFTRL:
             self.cache[j] = 1
         np.random.shuffle(self.cache)
         self.cache_log.append(self.cache)
-
-
 
     def get_next(self, request: np.ndarray) -> np.ndarray:
         """
@@ -103,12 +104,10 @@ class OFTRL:
         """
 
         x = cp.Variable(self.library_size)
-        regularizer = cp.sum(cp.multiply(np.array(self.reg_params) / 2,
-                             cp.square(
-                                 cp.norm(
-                                     cp.vstack([x for i in range(len(self.cache_log))]) - np.array(self.cache_log),
-                                     axis=1
-                                 ))))
+        regularizer = cp.square(cp.norm(x)) * (np.sum(self.reg_params) / 2) \
+                      - (np.array(self.cache_log).T @ np.array(self.reg_params)) @ x \
+                      + np.sum(np.array(self.reg_params)/2 * np.linalg.norm(self.cache_log, axis=1) ** 2)
+
         # Reward of a hit is simply the dot product
         reward_expr = self.reward_expr(x, prediction + gradient)
         objective = cp.Maximize(reward_expr - regularizer)
@@ -155,7 +154,7 @@ class OFTRL:
         # Calculate regret
         regret = 0
         for cache, req in zip(self.cache_log, self.request_log):
-             regret += self.reward(static_best_cache, req) - self.reward(cache, req)
+            regret += self.reward(static_best_cache, req) - self.reward(cache, req)
 
         return regret
 
