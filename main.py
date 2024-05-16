@@ -194,6 +194,37 @@ def graph_oftrl_regret(forecasters_options, distribution_options, cache_size, li
     plt.show()
     plt.close()
 
+def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_limit=None, num_of_requests=None, history_percentage=None):
+    print("========================================================================")
+    requests, history, library_size = utils.get_requests_from_movielens(path, library_limit=library_limit, request_limit=num_of_requests)
+
+    forecaster_list = []
+    for f in forecasters_options:
+        if f == "random":
+            forecaster = RandomForecaster(cache_size, library_size)
+            forecaster_list.append(forecaster)
+        if f == "recommender":
+            forecaster = RecommenderForecaster(kNNRecommender(10), library_size)
+            forecaster_list.append(forecaster)
+
+    # Collect regrets of different OFTRL forecaster combinations.
+    regret_list_list = []
+    for predictor in forecaster_list:
+        regret_list = run_oftrl_regret(requests, history, predictor, cache_size, library_size)
+        regret_list_list.append(regret_list)
+
+    # Plot the results on one graph
+    for regret_list, forecaster_name in zip(regret_list_list, forecasters_options):
+        plot_average_regret(regret_list, label=f"{forecaster_name} Forecaster")
+
+    plt.title(f"Movielens requests with C = {cache_size}, L = {library_size}, H ={history_percentage}")
+    plt.legend(loc="upper right")
+    plt.savefig(
+        f"new_plots/{datetime.datetime.now().strftime('%d%b%y%H%M')}_C-{cache_size}_L-{library_size}_H-{history_percentage}_N-{num_of_requests}_movielens.png")
+    plt.show()
+    plt.close()
+
+
 
 if __name__ == '__main__':
     start_time = time.time() * 1000
@@ -212,22 +243,32 @@ if __name__ == '__main__':
     # oftrl_recommender_normal(5, 250, 1000, history_size=50)
     # oftrl_recommender_arma(5, 250, 200, history_size=50)
 
-    graph_oftrl_regret(("random", "recommender"), "uniform",
-                       5, 250, 200, 50)
-    graph_oftrl_regret(("random", "recommender"), "zipf",
-                       5, 250, 200, 50)
-    graph_oftrl_regret(("random", "recommender"), "normal",
-                       5, 250, 200, 50)
+    # graph_oftrl_regret(("random", "recommender"), "uniform",
+    #                    5, 250, 200, 50)
+    # graph_oftrl_regret(("random", "recommender"), "zipf",
+    #                    5, 250, 200, 50)
+    # graph_oftrl_regret(("random", "recommender"), "normal",
+    #                    5, 250, 200, 50)
     # graph_oftrl_regret(("random", "recommender"), "arima",
     #                    5, 250, 200, 50)
 
     # graph_oftrl_regret(("random", "recommender"), "uniform",
-    #                    150, 10000, 10000, 50)
+    #                    15, 1000, 1000, 0)
     # graph_oftrl_regret(("random", "recommender"), "zipf",
-    #                    150, 10000, 10000, 50)
+    #                    15, 1000, 1000, 0)
     # graph_oftrl_regret(("random", "recommender"), "normal",
-    #                    150, 10000, 10000, 50)
+    #                    15, 1000, 1000, 0)
     # graph_oftrl_regret(("random", "recommender"), "arima",
-    #                    150, 10000, 10000, 50)
-    # plt.show()
+    #                    15, 1000, 1000, 0)
+
+    graph_oftrl_regret(("random", "recommender"), "uniform",
+                       5, 300, 300, 0)
+    # graph_oftrl_regret(("random", "recommender"), "zipf",
+    #                    5, 300, 300, 0)
+    # graph_oftrl_regret(("random", "recommender"), "normal",
+    #                    5, 300, 300, 0)
+    # graph_oftrl_regret(("random", "recommender"), "arima",
+    #                    5, 300, 300, 0)
+
+    # graph_oftrl_regret_movielens(("random", "recommender"), "ml-latest-small/ml-latest-small", 5, library_limit=300, num_of_requests=300)
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

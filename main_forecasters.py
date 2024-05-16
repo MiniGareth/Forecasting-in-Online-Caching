@@ -53,6 +53,6 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
     plt.close()
 
 if __name__ == "__main__":
-    all_forecasters_all_distributions(5, 100, 1000, 0)
-    all_forecasters_all_distributions(5, 100, 1000, 20)
-    all_forecasters_all_distributions(5, 100, 1000, 100)
+    all_forecasters_all_distributions(5, 300, 300, 0)
+    # all_forecasters_all_distributions(15, 1000, 1000, 20)
+    # all_forecasters_all_distributions(15, 1000, 1000, 100)
