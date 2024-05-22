@@ -2,11 +2,11 @@
 
 
 #SBATCH --job-name="gkit_cahcing"
-#SBATCH --time=04:00:00
+#SBATCH --time=02:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
-#SBATCH --partition=compute-p2
-#SBATCH --mem=100GB
+#SBATCH --cpus-per-task=4
+#SBATCH --partition=compute
+#SBATCH --mem-per-cpu=16GB
 #SBATCH --account=Education-EEMCS-Courses-CSE3000
 
 module load 2023r1
@@ -23,4 +23,4 @@ module load py-pip
 python -m pip install --user cvxpy
 python -m pip install --user statsmodels
 
-srun python main.py > pi2.log
+srun python main_forecasters.py > pi_forecasters.log

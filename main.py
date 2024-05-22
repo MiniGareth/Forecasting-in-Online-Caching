@@ -252,17 +252,17 @@ if __name__ == '__main__':
     # graph_oftrl_regret(("random", "recommender"), "arima",
     #                    5, 250, 200, 50)
 
-    # graph_oftrl_regret(("random", "recommender"), "uniform",
-    #                    15, 1000, 1000, 0)
-    # graph_oftrl_regret(("random", "recommender"), "zipf",
-    #                    15, 1000, 1000, 0)
-    # graph_oftrl_regret(("random", "recommender"), "normal",
-    #                    15, 1000, 1000, 0)
-    # graph_oftrl_regret(("random", "recommender"), "arima",
-    #                    15, 1000, 1000, 0)
-
     graph_oftrl_regret(("random", "recommender"), "uniform",
-                       5, 300, 300, 0)
+                       30, 2000, 2000, 0)
+    graph_oftrl_regret(("random", "recommender"), "zipf",
+                       30, 2000, 2000, 0)
+    graph_oftrl_regret(("random", "recommender"), "normal",
+                       30, 2000, 2000, 0)
+    graph_oftrl_regret(("random", "recommender"), "arima",
+                       30, 2000, 2000, 0)
+
+    # graph_oftrl_regret(("random", "recommender"), "uniform",
+    #                    5, 300, 300, 0)
     # graph_oftrl_regret(("random", "recommender"), "zipf",
     #                    5, 300, 300, 0)
     # graph_oftrl_regret(("random", "recommender"), "normal",
