@@ -252,14 +252,14 @@ if __name__ == '__main__':
     # graph_oftrl_regret(("random", "recommender"), "arima",
     #                    5, 250, 200, 50)
 
-    graph_oftrl_regret(("random", "recommender"), "uniform",
-                       30, 2000, 2000, 0)
-    graph_oftrl_regret(("random", "recommender"), "zipf",
-                       30, 2000, 2000, 0)
-    graph_oftrl_regret(("random", "recommender"), "normal",
-                       30, 2000, 2000, 0)
-    graph_oftrl_regret(("random", "recommender"), "arima",
-                       30, 2000, 2000, 0)
+    # graph_oftrl_regret(("random", "recommender"), "uniform",
+    #                    30, 2000, 2000, 0)
+    # graph_oftrl_regret(("random", "recommender"), "zipf",
+    #                    30, 2000, 2000, 0)
+    # graph_oftrl_regret(("random", "recommender"), "normal",
+    #                    30, 2000, 2000, 0)
+    # graph_oftrl_regret(("random", "recommender"), "arima",
+    #                    30, 2000, 2000, 0)
 
     # graph_oftrl_regret(("random", "recommender"), "uniform",
     #                    5, 300, 300, 0)
@@ -270,5 +270,5 @@ if __name__ == '__main__':
     # graph_oftrl_regret(("random", "recommender"), "arima",
     #                    5, 300, 300, 0)
 
-    # graph_oftrl_regret_movielens(("random", "recommender"), "ml-latest-small/ml-latest-small", 5, library_limit=300, num_of_requests=300)
+    graph_oftrl_regret_movielens(["random"], "ml-latest-small/ml-latest-small", 75, library_limit=5000, num_of_requests=1000)
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

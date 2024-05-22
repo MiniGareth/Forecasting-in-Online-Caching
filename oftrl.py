@@ -17,28 +17,37 @@ class OFTRL:
         self.sigma = 1 / np.sqrt(self.cache_size)
 
         # Parameters
-        self.predictor = predictor
-        self.reg_params = []  # Regularizer parameters
-        self.prev_gradient = None
-        self.gradient = None
+        self.predictor: Forecaster = predictor
+        self.prediction = np.zeros(library_size)
+        self.accum_gradient: np.ndarray = np.zeros(library_size)
+        self.accum_prediction_err: float = 0
+        self.accum_sigma: float = 0
+        self.accum_sigma_cache: np.ndarray = np.zeros(library_size)   # Sum of np.dot(sigma, x) where x is cache state
 
         # Logs
         self.prediction_log = []
-        self.prediction_err_log = []
         self.cache_log = []
         self.request_log = []
 
         # Initialize cache state
         self.cache = None
-        self._initialize_cache()
+
+        # =============================================================================================================
+        self.x = cp.Variable(self.library_size)
+        regularizer = cp.square(cp.norm(self.x)) * self.accum_sigma / 2 - self.accum_sigma_cache @ self.x
+        # + np.sum(np.array(self.reg_params)/2 * np.linalg.norm(self.cache_log, axis=1) ** 2)
+
+        # Reward of a hit is simply the dot product
+        reward_expr = self.reward_expr(self.x, self.prediction + self.accum_gradient)
+        objective = cp.Maximize(reward_expr - regularizer)
+        constraints = [cp.sum(self.x) == self.cache_size, 0 <= self.x, self.x <= 1]
+
+        self.prob = cp.Problem(objective, constraints)
 
     def _initialize_cache(self):
         """
         Initialize the cache to store random files.
         """
-        # Store first prediction to calculate prediction error later
-        self.prediction_log.append(self.predictor.predict())
-
         self.cache = np.zeros(self.library_size)
         for j in range(self.cache_size):
             self.cache[j] = 1
@@ -52,34 +61,28 @@ class OFTRL:
         :param request: A one-hot vector representing the file requested.
         :return: A cache vector anticipating the next request.
         """
-        # Get and store request info
+        # Store request received
         self.request_log.append(request)
+        # Get prediction
+        prediction = self.predictor.predict()
+        self.prediction_log.append(prediction)
+        # update predictor with new request after predicting
         self.predictor.update(self.request_log)
 
-        # Calculate and store prediction error.
-        prediction = self.prediction_log[-1]
-        prediction_err = np.square(np.linalg.norm(request - prediction))
-        self.prediction_err_log.append(prediction_err)
-
-        # Calculate regularizer parameters differently depending if this is first request
-        if len(self.request_log) == 1:
-            self.reg_params.append(self.sigma * np.sqrt(prediction_err))
-            self.gradient = request
-
+        # Take a random cache state if it is first request.
+        if len(self.request_log) <= 1:
+            self._initialize_cache()
+        # Assign cache while maximizing objective function
         else:
-            self.reg_params.append(self.sigma * (
-                    np.sqrt(np.sum(self.prediction_err_log)) - np.sqrt(np.sum(self.prediction_err_log[:-1]))
-            ))
-            self.prev_gradient = self.gradient
-            self.gradient = self.prev_gradient + request
+            self.assign_cache(prediction, self.accum_gradient)
 
-        # The number of regularizer parameters should be the same as the cache log
-        assert len(self.reg_params) == len(self.cache_log)
-
-        # New prediction and next cache state
-        new_prediction = self.predictor.predict()
-        self.prediction_log.append(new_prediction)
-        self.assign_cache(new_prediction, self.gradient)
+        # Update the algorithm parameters
+        new_prediction_err = np.linalg.norm(request - prediction, ord=2) ** 2
+        new_sigma = self.sigma * (np.sqrt(self.accum_prediction_err + new_prediction_err) - np.sqrt(self.accum_prediction_err))
+        self.accum_sigma += new_sigma
+        self.accum_sigma_cache += new_sigma * request
+        self.accum_prediction_err += new_prediction_err
+        self.accum_gradient += request
 
         return self.cache
 
@@ -103,19 +106,10 @@ class OFTRL:
         :param gradient: Gradient vector. A sum of all previous request vectors.
         """
 
-        x = cp.Variable(self.library_size)
-        regularizer = cp.square(cp.norm(x)) * (np.sum(self.reg_params) / 2) \
-                      - (np.array(self.cache_log).T @ np.array(self.reg_params)) @ x \
-                      + np.sum(np.array(self.reg_params)/2 * np.linalg.norm(self.cache_log, axis=1) ** 2)
 
-        # Reward of a hit is simply the dot product
-        reward_expr = self.reward_expr(x, prediction + gradient)
-        objective = cp.Maximize(reward_expr - regularizer)
-        constraints = [cp.sum(x) == self.cache_size, 0 <= x, x <= 1]
-
-        prob = cp.Problem(objective, constraints)
-        prob.solve(solver=cp.ECOS, abstol=0.0001, reltol=0.0001)
-        max_cache = x.value
+        # prob.solve(solver=cp.ECOS, abstol=0.0001, reltol=0.0001)
+        self.prob.solve()
+        max_cache = self.x.value
 
         # Store and log the new assigned cache
         self.cache = max_cache
