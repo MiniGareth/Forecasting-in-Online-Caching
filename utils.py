@@ -82,4 +82,14 @@ def get_requests_from_movielens(path: str, history_percentage=0, request_limit=N
     if request_limit is not None:
         requests = requests[:request_limit]
 
-    return list(requests), list(history), len(library)
+    return requests, history, len(library)
+
+def get_movie_lens_train(path: str, n_train=0.9):
+    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
+    nr_requests = len(all_requests)
+    return all_requests[:int(nr_requests * n_train)], library_size
+
+def get_movie_lens_test(path: str, n_test=0.1):
+    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
+    nr_requests = len(all_requests)
+    return all_requests[int(nr_requests * (1- n_test)):], library_size

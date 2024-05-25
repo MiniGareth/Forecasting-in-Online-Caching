@@ -270,5 +270,9 @@ if __name__ == '__main__':
     # graph_oftrl_regret(("random", "recommender"), "arima",
     #                    5, 300, 300, 0)
 
-    graph_oftrl_regret_movielens(["random"], "ml-latest-small/ml-latest-small", 75, library_limit=5000, num_of_requests=1000)
+    # graph_oftrl_regret_movielens(["random"], "ml-latest-small/ml-latest-small", 75, library_limit=5000, num_of_requests=1000)
+    train, train_library = utils.get_movie_lens_train("ml-latest-small/ml-latest-small")
+    test, test_library = utils.get_movie_lens_test("ml-latest-small/ml-latest-small")
+    print(len(train), train_library)
+    print(len(test), test_library)
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")
