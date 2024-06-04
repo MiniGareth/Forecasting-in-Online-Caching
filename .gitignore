@@ -1,5 +1,10 @@
 # Movielens Dataset
 ml-latest-small
+tests/grid
+tests/models*
+tests/runs*
+plots
+new_plots
 
 # PyCharm
 .idea

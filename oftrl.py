@@ -18,11 +18,11 @@ class OFTRL:
 
         # Parameters
         self.predictor: Forecaster = predictor
-        self.prediction = np.zeros(library_size)
         self.accum_gradient: np.ndarray = np.zeros(library_size)
         self.accum_prediction_err: float = 0
         self.accum_sigma: float = 0
         self.accum_sigma_cache: np.ndarray = np.zeros(library_size)   # Sum of np.dot(sigma, x) where x is cache state
+        self.accum_sigma_cache_cache: float = 0
 
         # Logs
         self.prediction_log = []
@@ -32,17 +32,6 @@ class OFTRL:
         # Initialize cache state
         self.cache = None
 
-        # =============================================================================================================
-        self.x = cp.Variable(self.library_size)
-        regularizer = cp.square(cp.norm(self.x)) * self.accum_sigma / 2 - self.accum_sigma_cache @ self.x
-        # + np.sum(np.array(self.reg_params)/2 * np.linalg.norm(self.cache_log, axis=1) ** 2)
-
-        # Reward of a hit is simply the dot product
-        reward_expr = self.reward_expr(self.x, self.prediction + self.accum_gradient)
-        objective = cp.Maximize(reward_expr - regularizer)
-        constraints = [cp.sum(self.x) == self.cache_size, 0 <= self.x, self.x <= 1]
-
-        self.prob = cp.Problem(objective, constraints)
 
     def _initialize_cache(self):
         """
@@ -74,13 +63,15 @@ class OFTRL:
             self._initialize_cache()
         # Assign cache while maximizing objective function
         else:
-            self.assign_cache(prediction, self.accum_gradient)
+            self._assign_cache(prediction, self.accum_gradient)
+        cache = self.cache_log[-1]
 
         # Update the algorithm parameters
         new_prediction_err = np.linalg.norm(request - prediction, ord=2) ** 2
         new_sigma = self.sigma * (np.sqrt(self.accum_prediction_err + new_prediction_err) - np.sqrt(self.accum_prediction_err))
         self.accum_sigma += new_sigma
-        self.accum_sigma_cache += new_sigma * request
+        self.accum_sigma_cache += new_sigma * cache
+        self.accum_sigma_cache_cache += new_sigma * (np.linalg.norm(cache, ord=2) ** 2)
         self.accum_prediction_err += new_prediction_err
         self.accum_gradient += request
 
@@ -98,21 +89,27 @@ class OFTRL:
 
         return self.cache_log
 
-    def assign_cache(self, prediction: np.ndarray, gradient: np.ndarray) -> None:
+    def _assign_cache(self, prediction: np.ndarray, accum_gradient: np.ndarray) -> None:
         """
         Assigns the cache based on the current prediction and the gradient of previous file requests.
         Assignment is done by trying to find a cache vector that maximizes reward
         :param prediction: Prediction vector. A discrete probability distribution
         :param gradient: Gradient vector. A sum of all previous request vectors.
         """
+        self.x = cp.Variable(self.library_size)
+        regularizer = (cp.square(cp.norm(self.x)) * self.accum_sigma / 2 - self.accum_sigma_cache @ self.x
+                       + self.accum_sigma_cache_cache / 2)
 
+        # Reward of a hit is simply the dot product
+        reward_expr = self.reward_expr(self.x, prediction + accum_gradient)
+        objective = cp.Maximize(reward_expr - regularizer)
+        constraints = [cp.sum(self.x) == self.cache_size, 0 <= self.x, self.x <= 1]
 
-        # prob.solve(solver=cp.ECOS, abstol=0.0001, reltol=0.0001)
-        self.prob.solve()
-        max_cache = self.x.value
+        prob = cp.Problem(objective, constraints)
+        prob.solve()
 
         # Store and log the new assigned cache
-        self.cache = max_cache
+        self.cache = self.x.value
         self.cache_log.append(self.cache)
 
     def reward(self, cache: np.ndarray, request: np.ndarray) -> float:

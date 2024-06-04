@@ -37,25 +37,19 @@ def get_requests_from_distribution(distribution: str, library_size, num_of_reque
 
     return requests, history
 
-def convert_to_vectors(requests, history, library_size):
-    # Shuffling so it is not always guaranteed that the file 1 will have the highest chance of getting requested.
-    shuffled_range = np.arange(0, library_size)
-    np.random.shuffle(shuffled_range)
+def convert_to_vectors(requests, library_size, idx_mapper: dict=None):
+    if idx_mapper is None:
+        idx_mapper = dict(zip(np.arange(0, library_size), np.arange(0, library_size)))
+
     request_vectors = []
-    history_vectors = []
-    for req in history:
-        idx = shuffled_range[int(req)]
-        vector = np.zeros(library_size)
-        vector[idx] = 1
-        history_vectors.append(vector)
 
     for req in requests:
-        idx = shuffled_range[int(req)]
+        idx = idx_mapper[int(req)]
         vector = np.zeros(library_size)
         vector[idx] = 1
         request_vectors.append(vector)
 
-    return request_vectors, history_vectors
+    return np.array(request_vectors)
 
 def get_requests_from_movielens(path: str, history_percentage=0, request_limit=None, library_limit=None):
     ratings = pd.read_csv(path +"/ratings.csv")
@@ -76,20 +70,30 @@ def get_requests_from_movielens(path: str, history_percentage=0, request_limit=N
         requests[i] = movie_mapper[requests[i]]
 
     # Limit history and requests size based on parameters
+    if request_limit is not None:
+        requests = requests[-request_limit:]
+
     history = requests[:int(len(requests) * history_percentage)]
     requests = requests[int(len(requests) * history_percentage):]
 
-    if request_limit is not None:
-        requests = requests[:request_limit]
+    return np.array(requests), np.array(history), len(library)
 
-    return requests, history, len(library)
-
-def get_movie_lens_train(path: str, n_train=0.9):
+def get_movie_lens_train(path: str, n_train=0.8):
     all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
     nr_requests = len(all_requests)
-    return all_requests[:int(nr_requests * n_train)], library_size
+    return np.array(all_requests[:int(nr_requests * n_train)]), library_size
 
 def get_movie_lens_test(path: str, n_test=0.1):
     all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
     nr_requests = len(all_requests)
-    return all_requests[int(nr_requests * (1- n_test)):], library_size
+    return np.array(all_requests[int(nr_requests * (1- n_test)):]), library_size
+
+def get_movie_lens_split(path: str, n_train=0.8, n_val=0.1, n_test=0.1):
+    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
+    nr_requests = len(all_requests)
+
+    train = np.array(all_requests[:int(nr_requests * n_train)])
+    validation = np.array(all_requests[int(nr_requests * n_train):int(nr_requests *(n_train + n_val))])
+    test = np.array(all_requests[int(nr_requests * (1- n_test)):])
+
+    return train, validation, test

@@ -4,6 +4,10 @@ import numpy as np
 
 
 class Forecaster(ABC):
+    """
+    Forecasters predict the future requests.
+    They take in vectors and output vectors.
+    """
     def __init__(self, horizon):
         self.horizon = horizon
 
@@ -12,5 +16,5 @@ class Forecaster(ABC):
         pass
 
     @abstractmethod
-    def update(self, history):
+    def update(self, history_vec):
         pass
