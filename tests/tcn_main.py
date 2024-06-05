@@ -10,13 +10,18 @@ from tcn.models import TemporalConvNet
 def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, best_tuple: tuple=(None, None, float("inf"))):
     if key_idx >= len(hyper_params):
         print(f"Trying: {hyper_params}")
+        postfix = (f"i{hyper_params['num_inputs']}f{hyper_params['num_filters']}"
+                   f"l{hyper_params['num_layers']}k{hyper_params['kernel_size']}"
+                   f"d{hyper_params['dropout']}c{hyper_params['num_classes']}r{hyper_params['learning_rate']}")
+        runs_folder = f"grid/runs_{postfix}/"
+        model_folder = f"grid/models/{postfix}"
         # Train and evaluate model
         model = TemporalConvNet(
             num_inputs=hyper_params["num_inputs"],
             num_channels=[hyper_params["num_filters"]] * hyper_params["num_layers"],
             kernel_size=hyper_params["kernel_size"],
             dropout=hyper_params["dropout"],
-            runs_folder="grid/runs_L200",
+            runs_folder=runs_folder,
             mode="classification",
             num_classes=hyper_params["num_classes"],
             gpu=True
@@ -30,11 +35,13 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
             clip=-1,
             loss_function=nn.NLLLoss(),
             save_every_epoch=10,
-            model_path="grid/models/",
+            model_path=model_folder,
             valid_loader=val_loader,
             scheduler=None,
             print_every_epoch=10
         )
+        # Load weights and biases of model
+        model = model.load_state_dict(torch.load(model_folder + "_best"))
         # Return hyper parameters, model and loss
         if best_tuple[2] is None or best_val_loss < best_tuple[2]:
             return hyper_params.copy(), model, best_val_loss
@@ -84,7 +91,7 @@ def test_tcn_movielens(library_size=None, request_limit=None):
 
     # Create Data Loaders
     batch_size = 128
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
@@ -126,6 +133,7 @@ def test_tcn_movielens(library_size=None, request_limit=None):
         scheduler=None,
         print_every_epoch=10
     )
+    model = model.load_state_dict(torch.load(models_folder + "_best"))
     # Test the model on the test loader
     test_model(model, test_loader)
 
@@ -143,7 +151,7 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
 
     # Create Data Loaders
     batch_size = 128
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
@@ -155,20 +163,20 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
     # Specify range of hyper_parameters to try
     hyper_parameters = {
         "num_inputs": [library_size],
-        "num_filters": [30, 50, 70],
-        "num_layers": [10],
-        "kernel_size": [6],
+        "num_filters": [40, 50, 60],
+        "num_layers": [6, 8, 10, 12],
+        "kernel_size": [6, 8],
         "dropout": [0.2],
         "num_classes": [library_size],
-        "learning_rate": [0.1],
+        "learning_rate": [0.1, 0.01],
     }
-    best_hyper_params, best_model, best_val_loss = grid_search_tcn(train_loader, test_loader, hyper_parameters, 0)
+    best_hyper_params, best_model, best_val_loss = grid_search_tcn(train_loader, val_loader, hyper_parameters, 0)
 
     print(best_hyper_params)
     test_model(best_model, test_loader)
 
 
 if __name__ == "__main__":
-    test_tcn_movielens(100, None)
+    # test_tcn_movielens(100, None)
     # test_tcn_movielens(200, None)
-    # find_tcn_grid_search_movielens(100, None)
+    find_tcn_grid_search_movielens(100, None)

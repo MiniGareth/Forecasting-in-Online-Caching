@@ -48,6 +48,8 @@ class MovieLensDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
+        # Zeros are padded at the front of the request matrix if there are not enough past requests to fill the matrix
+        # Matrix is of size (library size, self.horizon)
         past_idx = idx - self.horizon + 1
         requests = np.concatenate((np.zeros((self.data.shape[0], -1* past_idx if past_idx < 0 else 0)),
                                    self.data[:, np.maximum(0, past_idx):idx + 1]), axis=1)
