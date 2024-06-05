@@ -13,8 +13,8 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
         postfix = (f"i{hyper_params['num_inputs']}f{hyper_params['num_filters']}"
                    f"l{hyper_params['num_layers']}k{hyper_params['kernel_size']}"
                    f"d{hyper_params['dropout']}c{hyper_params['num_classes']}r{hyper_params['learning_rate']}")
-        runs_folder = f"grid/runs_{postfix}/"
-        model_folder = f"grid/models/{postfix}"
+        runs_folder = f"tcn/grid/runs_{postfix}/"
+        model_folder = f"tcn/grid/models/{postfix}"
         # Train and evaluate model
         model = TemporalConvNet(
             num_inputs=hyper_params["num_inputs"],
@@ -101,8 +101,8 @@ def test_tcn_movielens(library_size=None, request_limit=None):
     print(f"Train size: {train_dataset.__len__()}, Validation size: {val_dataset.__len__()}, Test size: {test_dataset.__len__()}")
 
     # TCN Hyperparameters
-    runs_folder = "runs"
-    models_folder = "models/m"
+    runs_folder = "tcn/runs"
+    models_folder = "tcn/models/m"
     num_inputs = 100
     kernel_size = 6
     dropout = 0.2
@@ -141,12 +141,12 @@ def test_tcn_movielens(library_size=None, request_limit=None):
 def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
     # Create train, validation, and test datasets
     float_tensor_transform = lambda x: torch.tensor(x).float()
-    train_dataset = MovieLensDataset("../ml-latest-small/ml-latest-small/", split="train", library_limit=library_size,
+    train_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="train", library_limit=library_size,
                                      request_limit=request_limit, transform=float_tensor_transform)
-    val_dataset = MovieLensDataset("../ml-latest-small/ml-latest-small/", split="validation",
+    val_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="validation",
                                    library_limit=library_size,
                                    request_limit=request_limit, transform=float_tensor_transform)
-    test_dataset = MovieLensDataset("../ml-latest-small/ml-latest-small/", split="test", library_limit=library_size,
+    test_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="test", library_limit=library_size,
                                     request_limit=request_limit, transform=float_tensor_transform)
 
     # Create Data Loaders
@@ -168,7 +168,7 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
         "kernel_size": [6, 8],
         "dropout": [0.2],
         "num_classes": [library_size],
-        "learning_rate": [0.1, 0.01],
+        "learning_rate": [0.1],
     }
     best_hyper_params, best_model, best_val_loss = grid_search_tcn(train_loader, val_loader, hyper_parameters, 0)
 

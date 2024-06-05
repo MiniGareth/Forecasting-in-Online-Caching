@@ -5,7 +5,8 @@
 #SBATCH --time=05:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --partition=compute
+#SBATCH --gpus-per-task=1
+#SBATCH --partition=gpu
 #SBATCH --mem-per-cpu=4G
 #SBATCH --account=Education-EEMCS-Courses-CSE3000
 
@@ -26,4 +27,4 @@ python -m pip install --user cvxpy
 python -m pip install --user statsmodels
 python -m pip install --user tensorboard
 
-srun python tcn_main.py > tcn_main_cpu.log
+srun python tcn_main.py > tcn_main_gpu.log
