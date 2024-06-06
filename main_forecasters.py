@@ -11,13 +11,13 @@ from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RandomForecaster import RandomForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
-from plotters import plot_accuracy_bar
+from plotters import plot_utility_bar
 from recommender.kNNRecommender import kNNRecommender
 
 forecaster_names = ["Random Forecaster", "Naive Forecaster", "KNN Recommender", "Parrot 50"]
 
 def all_forecasters_all_distributions(cache_size, library_size, num_of_requests, history_size):
-    accuracies_per_distribution = []
+    utilities_per_distribution = []
     distributions = ["uniform", "zipf", "normal"]
     # distributions = ["arima"]
     for distribution in distributions:
@@ -37,9 +37,9 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
                        NaiveForecaster(library_size),
                        RecommenderForecaster(library_size, history_vecs),
                        ParrotForecaster(np.concatenate((history_vecs, request_vecs), axis=0), accuracy=0.5, start_position=len(history_vecs))]
-        accuracies = []
+        utilities = []
 
-        # For every forecaster we get their predictions and store the accuracies
+        # For every forecaster we get their predictions and store the utilities
         for forecaster in forecasters:
             forecaster_history = list(history_vecs).copy()
             predictions = []
@@ -48,20 +48,20 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
                 forecaster_history.append(req)
                 forecaster.update(req)
             # Calculate Score: Nr. of cache hits
-            score = 0
+            utility = 0
             for i in range(len(predictions)):
-                score += np.dot(predictions[i], request_vecs[i])
-            accuracies.append(score / len(predictions))
+                utility += np.dot(predictions[i], request_vecs[i])
+            utilities.append(utility / len(predictions))
 
-        accuracies_per_distribution.append(accuracies)
+        utilities_per_distribution.append(utilities)
 
-    df = pd.DataFrame(accuracies_per_distribution, columns=forecaster_names, index=distributions)
-    df.to_csv("tables/forecaster accuracies per distribution.csv")
+    df = pd.DataFrame(utilities_per_distribution, columns=forecaster_names, index=distributions)
+    df.to_csv("tables/forecaster utilities per distribution.csv")
     print(df)
     return df
 
 def all_forecasters_movielens(cache_size, library_size):
-    accuracies_per_distribution = []
+    utilities_per_distribution = []
     # distributions = ["arima"]
     print("MovieLens")
     train, val, test = utils.get_movie_lens_split("ml-latest-small/ml-latest-small", library_limit=library_size)
@@ -75,9 +75,9 @@ def all_forecasters_movielens(cache_size, library_size):
                    NaiveForecaster(library_size),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs))),
                    ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs), axis=0), accuracy=0.5)]
-    accuracies = []
+    utilities = []
 
-    # For every forecaster we get their predictions and store the accuracies
+    # For every forecaster we get their predictions and store the utilities
     for forecaster in forecasters:
         forecaster_history = list(np.concatenate((train_vecs, val_vecs))).copy()
         predictions = []
@@ -86,15 +86,15 @@ def all_forecasters_movielens(cache_size, library_size):
             forecaster_history.append(req)
             forecaster.update(req)
         # Calculate Score: Nr. of cache hits
-        score = 0
+        utility = 0
         for i in range(len(predictions)):
-            score += np.dot(predictions[i], test_vecs[i])
-        accuracies.append(score / len(predictions))
+            utility += np.dot(predictions[i], test_vecs[i])
+        utilities.append(utility / len(predictions))
 
-    accuracies_per_distribution.append(accuracies)
+    utilities_per_distribution.append(utilities)
 
-    df = pd.DataFrame(accuracies_per_distribution, columns=forecaster_names)
-    df.to_csv(f"tables/forecaster accuracies for MovieLens {library_size}.csv")
+    df = pd.DataFrame(utilities_per_distribution, columns=forecaster_names)
+    df.to_csv(f"tables/forecaster utilities for MovieLens {library_size}.csv")
     print(df)
 
 

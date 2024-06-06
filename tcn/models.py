@@ -53,7 +53,7 @@ class GenericTemporalConvNet(nn.Module):
         for epoch in range(num_epoch):
             self.train()
             total_loss = 0
-            total_score = 0
+            total_utility = 0
             for batch_idx, (x_, y_) in enumerate(train_loader):
                 x_ = Variable(x_)
                 y_ = Variable(y_)
@@ -68,12 +68,12 @@ class GenericTemporalConvNet(nn.Module):
                     torch.nn.utils.clip_grad_norm_(self.parameters(), clip)
                 optimizer.step()
                 total_loss += loss.item()
-                total_score += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
+                total_utility += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
             cur_loss = total_loss / (batch_idx + 1)
             if (epoch + 1) % print_every_epoch == 0:
                 print("Epoch: " + str(epoch))
                 print('Loss: {:.6f}'.format(cur_loss))
-                print(f"Accuracy: {total_score / (batch_idx + 1)}")
+                print(f"Utility: {total_utility / (batch_idx + 1)}")
 
             if self.tb_writer is not None:
                 self.tb_writer.add_scalar("training/loss", cur_loss, epoch)
@@ -85,7 +85,7 @@ class GenericTemporalConvNet(nn.Module):
                 test_loss = 0
                 correct = 0
                 counter = 0
-                total_score = 0
+                total_utility = 0
                 for batch_idx, (x_, y_) in enumerate(valid_loader):
                     x_ = Variable(x_)
                     y_ = Variable(y_)
@@ -97,7 +97,7 @@ class GenericTemporalConvNet(nn.Module):
                     if self.mode == "classification":
                         pred = output.data.max(1, keepdim=True)[1]
                         correct += pred.eq(y_.data.view_as(pred)).cpu().sum()
-                        total_score += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
+                        total_utility += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
 
                     test_loss += loss.item()
 
@@ -106,7 +106,7 @@ class GenericTemporalConvNet(nn.Module):
                     best_val_loss = test_loss / (batch_idx + 1)
                     print("Best model is saved, epoch: " + str(epoch))
                     print(f"Loss: {best_val_loss}")
-                    print(f"Accuracy: {total_score/(batch_idx + 1)}")
+                    print(f"Utility: {total_utility/(batch_idx + 1)}")
                 if self.tb_writer is not None:
                     self.tb_writer.add_scalar("validation/loss", test_loss / (batch_idx + 1), epoch)
                     if self.mode == "classification":

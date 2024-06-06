@@ -59,7 +59,7 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
 
 def test_model(model, test_loader):
     total_loss = 0
-    total_accuracy = 0
+    total_utility = 0
     for batch_index, (x_, y_) in enumerate(test_loader):
         x_ = Variable(x_)
         y_ = Variable(y_)
@@ -69,13 +69,13 @@ def test_model(model, test_loader):
         output = model(x_)
         loss = nn.NLLLoss()(output, y_)
         total_loss += loss
-        # Accuracy is the average percentage of a cache hit
-        accuracy = torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
-        total_accuracy += accuracy
+        # Utility is the average percentage of a cache hit
+        utility = torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
+        total_utility += utility
     print("======================================================================================================")
     print("Test data")
     print(f"Loss: {total_loss / (batch_index + 1)}")
-    print(f"Accuracy: {total_accuracy / (batch_index + 1)}")
+    print(f"utility: {total_utility / (batch_index + 1)}")
 
 
 def test_tcn_movielens(library_size=None, request_limit=None):

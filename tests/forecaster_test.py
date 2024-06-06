@@ -66,7 +66,7 @@ def test_random(library_size, history_num, req_num):
     print("================================================================================")
     print("Random Forecaster:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
+    print(f"Utility: {score / req_num * 100:.2f}")
 def test_random_movielens():
     # Draw requests from uniform distribution
     train_requests, train_library = utils.get_movie_lens_train("../ml-latest-small/ml-latest-small")
@@ -86,7 +86,7 @@ def test_random_movielens():
     print("================================================================================")
     print("Random Forecaster on MovieLens:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
+    print(f"Utility: {score / req_num * 100:.2f}")
 
 def test_recommender_uniform(library_size, history_num, req_num):
     # Draw requests from uniform distribution
@@ -101,11 +101,11 @@ def test_recommender_uniform(library_size, history_num, req_num):
     print("================================================================================")
     print("KNN Recommender:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
+    print(f"Utility: {score / req_num * 100:.2f}")
     assert isclose(score / req_num, 1 / library_size, abs_tol=0.1)
 
 
-def test_parrot(library_size, history_num, req_num, accuracy:float =1):
+def test_parrot(library_size, history_num, req_num, Utility:float =1):
     # Draw requests from uniform distribution
     history = [random.randint(0, library_size - 1) for i in range(history_num)]
     requests = [random.randint(0, library_size - 1) for i in range(req_num)]
@@ -113,15 +113,15 @@ def test_parrot(library_size, history_num, req_num, accuracy:float =1):
     # Convert to vectors
     requests_vec, history_vec = utils.convert_to_vectors(requests, history, library_size)
 
-    forecaster = ParrotForecaster(history_vec + requests_vec, accuracy=accuracy)
+    forecaster = ParrotForecaster(history_vec + requests_vec, Utility=Utility)
 
     score = test_forecaster_score(forecaster, requests_vec, history_vec, library_size, history_num, req_num)
     print()
     print("================================================================================")
     print("Parrot Forecaster:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
-    assert isclose(score / req_num, accuracy, abs_tol=0.1)
+    print(f"Utility: {score / req_num * 100:.2f}")
+    assert isclose(score / req_num, Utility, abs_tol=0.1)
 
 def test_naive(library_size, history_num, req_num):
     # Draw requests from uniform distribution
@@ -145,8 +145,8 @@ def test_naive(library_size, history_num, req_num):
     print("================================================================================")
     print("Naive Forecaster:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
-    print(f"Accuracy 2: {score2 / req_num * 2 * 100:.2f}%")
+    print(f"Utility: {score / req_num:.2f}")
+    print(f"Utility 2: {score2 / req_num * 2:.2f}")
 
 def test_naive_movielens():
     # Draw requests from uniform distribution
@@ -167,7 +167,7 @@ def test_naive_movielens():
     print("================================================================================")
     print("Naive Forecaster on MovieLens:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
+    print(f"Utility: {score / req_num:.2f}")
 
 def test_arima_movielens():
     # Draw requests from uniform distribution
@@ -188,7 +188,7 @@ def test_arima_movielens():
     print("================================================================================")
     print("Arima Forecaster on MovieLens:")
     print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
+    print(f"Utility: {score / req_num:.2f}")
 
 def test_tcn_movielens_darts():
     # train_requests, val_requests, test_requests = utils.get_movie_lens_split("../ml-latest-small/ml-latest-small")
@@ -252,7 +252,7 @@ def test_tcn_movielens_darts():
     print("================================================================================")
     print("TCN Forecaster on MovieLens:")
     # print(f"Library size: {library_size}, Request num: {req_num}, History num: {history_num}")
-    print(f"Accuracy: {score / req_num * 100:.2f}%")
+    print(f"Utility: {score / req_num:.2f}")
 
 def generate_loaders(X, val_X, y, val_y, batch_size=1):
     X = torch.from_numpy(X).type(torch.FloatTensor)
@@ -269,9 +269,9 @@ def generate_loaders(X, val_X, y, val_y, batch_size=1):
 
 if __name__ == "__main__":
     # test_recommender_uniform(100, 50, 500)
-    # test_parrot(100, 50, 500, accuracy=1)
-    # test_parrot(100, 50, 500, accuracy=0.8)
-    # test_parrot(100, 50, 500, accuracy=0.5)
+    # test_parrot(100, 50, 500, Utility=1)
+    # test_parrot(100, 50, 500, Utility=0.8)
+    # test_parrot(100, 50, 500, Utility=0.5)
     # test_random(100, 50, 500)
     # test_random_movielens()
     # test_naive(100, 50, 500)

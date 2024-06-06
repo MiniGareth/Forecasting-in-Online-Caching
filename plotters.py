@@ -40,11 +40,11 @@ def plot_average_utility(utility_list, title=None, label=None):
     plt.xticks(np.arange(len(utility_list), step=len(utility_list) // 10))
     plt.plot([utility / (i + 1) for i, utility in enumerate(utility_list)], label=label)
 
-def plot_accuracy_bar(data: list, forecaster_list: list, distributions: list, title=None):
+def plot_utility_bar(data: list, forecaster_list: list, distributions: list, title=None):
     if len(data) != len(distributions):
-        raise ValueError("The number of distributions must match the number of accuracy lists in data")
+        raise ValueError("The number of distributions must match the number of utility lists in data")
     if title is None:
-        plt.title("Accuracy per Forecaster")
+        plt.title("Utility per Forecaster")
     else:
         plt.title(title)
 
@@ -57,9 +57,8 @@ def plot_accuracy_bar(data: list, forecaster_list: list, distributions: list, ti
         loc += width
 
     plt.xlabel("Forecasters")
-    plt.ylabel("Accuracy")
+    plt.ylabel("Utility")
     plt.yticks(np.arange(0, 1, step=0.1))
     plt.xticks(X_axis, forecaster_list)
     plt.legend(loc="upper right")
 
-# def plot_average_accuracy(forecaster_list: list, accuracy_over_time_list: list, title=None):
