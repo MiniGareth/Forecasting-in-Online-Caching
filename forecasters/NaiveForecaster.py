@@ -16,5 +16,5 @@ class NaiveForecaster(Forecaster):
     def predict(self) -> np.ndarray:
         return self.last_seen_event
 
-    def update(self, history):
-        self.last_seen_event = history[-1]
+    def update(self, latest_req:np.ndarray):
+        self.last_seen_event = latest_req

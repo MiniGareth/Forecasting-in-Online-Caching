@@ -10,10 +10,10 @@ class ParrotForecaster(Forecaster):
     The ParrotForecaster is a forecaster that predicts the future exactly equal to the list of requests it receives.
     For future beyond the given request list, the latest request on the list is returned.
     """
-    def __init__(self, future_request_vectors: list, horizon=1, accuracy=1):
+    def __init__(self, future_request_vectors: np.ndarray, start_position=0, horizon=1, accuracy=1):
         super().__init__(horizon)
-        self.request_list = future_request_vectors     #Request list of vectors
-        self.position = 0   # Pointer of which request in the request list is the next prediction
+        self.request_list = list(future_request_vectors)     #Request list of vectors
+        self.position = start_position   # Pointer of which request in the request list is the next prediction
         self.accuracy = accuracy
 
     def predict(self) -> np.ndarray:
@@ -25,7 +25,6 @@ class ParrotForecaster(Forecaster):
         if self.position >= len(self.request_list):
             self.position = len(self.request_list) - 1
         prediction = self.request_list[self.position]
-        self.position += 1
 
         # There is a chance to return the correct prediction and a chance to return a random file
         if random.random() < self.accuracy:
@@ -35,13 +34,8 @@ class ParrotForecaster(Forecaster):
             v[random.randint(0, len(prediction) - 1)] = 1
             return v
 
-    def update(self, history_vectors: list[np.ndarray]) -> None:
-        if len(history_vectors) == 0:
-            return
+    def update(self, latest_req: np.ndarray):
+        if (self.request_list[self.position] != latest_req).all():
+            raise ValueError(f"The latest request {latest_req} does not match the request known {self.request_list[self.position]} in this Forecaster")
 
-        for i in range(min(len(history_vectors), len(self.request_list))):
-            if (history_vectors[i] != self.request_list[i]).all():
-                raise ValueError(f"The history of requests {history_vectors} does not match the future requests {self.request_list} in this Forecaster")
-
-        # Update the position
-        self.position = i + 1
+        self.position += 1

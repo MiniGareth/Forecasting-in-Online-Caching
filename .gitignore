@@ -5,6 +5,7 @@ tests/models*
 tests/runs*
 plots
 new_plots
+tables
 
 # PyCharm
 .idea

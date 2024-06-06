@@ -15,7 +15,7 @@ default_params = {
     }
 class TCNForecaster(Forecaster):
     def __init__(self, num_inputs, num_filters, num_layers, horizon=128, kernel_size=2, dropout=0.2, num_classes=1,
-                 gpu=True, model_path=None, history=None):
+                 gpu=True, model_path=None, history: list=None):
         super().__init__(horizon)
         if history is None:
             history = []
@@ -44,8 +44,5 @@ class TCNForecaster(Forecaster):
 
         return prediction
 
-    def update(self, history_vec):
-        if self.history is None:
-            self.history = np.array(history_vec)
-        else:
-            self.history = np.append(self.history, history_vec)
+    def update(self, history_vec: list):
+        self.history = history_vec

@@ -16,5 +16,5 @@ class Forecaster(ABC):
         pass
 
     @abstractmethod
-    def update(self, history_vec):
+    def update(self, latest_req:np.ndarray):
         pass

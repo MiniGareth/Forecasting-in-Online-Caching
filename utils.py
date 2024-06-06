@@ -1,41 +1,27 @@
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
-def get_requests_from_distribution(distribution: str, library_size, num_of_requests, history_size):
-    history = None
+def get_requests_from_distribution(distribution: str, library_size, num_of_requests):
     requests = None
     # Create history and requests based on the chosen distribution
     if distribution == "uniform":
         requests = np.random.uniform(0, library_size, size=num_of_requests)
-        history = np.random.uniform(0, library_size, size=history_size)
     elif distribution == "zipf":
         zipf_param = 1.1
-        history = np.random.zipf(zipf_param, size=history_size)
-        history = history - 1
-        history = history[history < library_size]
-        requests = np.random.zipf(zipf_param, size=num_of_requests)
+        requests = np.random.zipf(zipf_param, size=4*num_of_requests)
         requests = requests - 1
         requests = requests[requests < library_size]
+
     elif distribution == "normal":
-        history = np.random.normal(library_size / 2, library_size / 6, size=history_size)
-        history = history[history < library_size]
-        history = history[history >= 0]
-        requests = np.random.normal(library_size / 2, library_size / 6, size=num_of_requests)
+        requests = np.random.normal(library_size / 2, library_size / 6, size=2*num_of_requests)
         requests = requests[requests < library_size]
         requests = requests[requests >= 0]
-    elif distribution == "arima":
-        history = np.random.normal(library_size / 2, library_size / 6, size=max(100, history_size))
-        history = history[history < library_size][history >= 0]
-        arima = ARIMA(history, order=(1, 0, 1))
-        arima_res = arima.fit()
-        requests = arima_res.forecast(num_of_requests)
-        requests = requests[requests < library_size]
-        requests = requests[requests >= 0]
+
 
     else:
         raise ValueError("Distribution must be uniform, zipf, normal or arima.")
 
-    return requests, history
+    return requests[:num_of_requests]
 
 def convert_to_vectors(requests, library_size, idx_mapper: dict=None):
     if idx_mapper is None:
@@ -44,7 +30,11 @@ def convert_to_vectors(requests, library_size, idx_mapper: dict=None):
     request_vectors = []
 
     for req in requests:
-        idx = idx_mapper[int(req)]
+        try:
+            idx = idx_mapper[req]
+        except:
+            idx = idx_mapper[int(req)]
+
         vector = np.zeros(library_size)
         vector[idx] = 1
         request_vectors.append(vector)
@@ -78,18 +68,18 @@ def get_requests_from_movielens(path: str, history_percentage=0, request_limit=N
 
     return np.array(requests), np.array(history), len(library)
 
-def get_movie_lens_train(path: str, n_train=0.8):
-    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
+def get_movie_lens_train(path: str, n_train=0.8, library_limit=1000):
+    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=library_limit)
     nr_requests = len(all_requests)
     return np.array(all_requests[:int(nr_requests * n_train)]), library_size
 
-def get_movie_lens_test(path: str, n_test=0.1):
-    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
+def get_movie_lens_test(path: str, n_test=0.1, library_limit=1000):
+    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=library_limit)
     nr_requests = len(all_requests)
     return np.array(all_requests[int(nr_requests * (1- n_test)):]), library_size
 
-def get_movie_lens_split(path: str, n_train=0.8, n_val=0.1, n_test=0.1):
-    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=1000)
+def get_movie_lens_split(path: str, n_train=0.8, n_val=0.1, n_test=0.1, library_limit=1000):
+    all_requests, history, library_size = get_requests_from_movielens(path, library_limit=library_limit)
     nr_requests = len(all_requests)
 
     train = np.array(all_requests[:int(nr_requests * n_train)])

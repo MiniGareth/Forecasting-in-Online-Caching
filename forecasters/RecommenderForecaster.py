@@ -5,17 +5,22 @@ import pandas as pd
 
 from forecasters.Forecaster import Forecaster
 from recommender import Recommender
+from recommender.kNNRecommender import kNNRecommender
 
 
 class RecommenderForecaster(Forecaster):
     """
     This class uses a recommendation system to predict the future.
     """
-    def __init__(self, recommender: Recommender, library_size: int, horizon=1):
+    def __init__(self, library_size: int, history: np.ndarray, horizon=1, k=None):
         super().__init__(horizon)
-        self.recommender = recommender
-        self.latest_history = []
+        self.k = library_size - 1 if k is None else k
+        self.recommender = kNNRecommender(self.k)
+        # List of vectors
+        self.history = list(history)
         self.library_size = library_size
+        # Train KNN
+        self._train(history)
 
 
     def predict(self) -> np.ndarray:
@@ -26,13 +31,14 @@ class RecommenderForecaster(Forecaster):
         :return: a vector (numpy array)
         """
         # If no requests have been made yet
-        if len(np.unique(self.latest_history)) < 2:
+        if len(np.unique(self.history)) < 2:
             result = np.zeros(self.library_size)
             result[0] = 1
 
         else:
             # Get top N recommendataions based on the last request made.
-            recommendations = self.recommender.recommend(self.latest_history[-1])
+            req_idx = np.where(self.history[-1] == 1)[0][0]
+            recommendations = self.recommender.recommend(req_idx)
             result = np.zeros(self.library_size)
             # Get the weighted average of the top N recommendations. Top recommendation is weighted highest
             for i, rec in enumerate(recommendations):
@@ -42,18 +48,23 @@ class RecommenderForecaster(Forecaster):
         return result
 
 
-    def update(self, history: list):
+    def update(self, latest_req:np.ndarray):
         """
         Updates the state of the forecaster based on the current history of requests.
         The history of requests is treated as a time series before being converted into a utility matrix for the
         recommender. This conversion is based on Alvaro Gomez Time Series Forecasting by Recommendation: An Empirical Analysis on Amazon Marketplace (2019)
         :param history: List of vectors (requests) that have been made.
         """
-        if len(history) == 0:
+        self.history.append(latest_req)
+
+
+
+    def _train(self, train_data:np.ndarray):
+        if len(train_data) == 0:
             return
 
-        self.latest_history = [list(v).index(1) for v in history]
-        ts0 = pd.DataFrame(np.round(self.latest_history))
+        train_scalar = [list(v).index(1) for v in train_data]
+        ts0 = pd.DataFrame(np.round(train_scalar))
         ts1 = ts0.shift(self.horizon)
 
         # Remove first h items from ts1 and last h items from ts0 to make them the same length
@@ -84,3 +95,4 @@ class RecommenderForecaster(Forecaster):
         df = pd.DataFrame(df, columns=["users", "items", "rating"])
 
         self.recommender.train(df, users="users", items="items", ratings="rating")
+

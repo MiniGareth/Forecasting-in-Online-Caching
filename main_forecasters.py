@@ -2,57 +2,107 @@ import time
 import datetime
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 
 import utils
+from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RandomForecaster import RandomForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
 from plotters import plot_accuracy_bar
 from recommender.kNNRecommender import kNNRecommender
 
+forecaster_names = ["Random Forecaster", "Naive Forecaster", "KNN Recommender", "Parrot 50"]
 
 def all_forecasters_all_distributions(cache_size, library_size, num_of_requests, history_size):
-    forecaster_names = ["Random Forecaster", "KNN Recommender", "Parrot 50"]
     accuracies_per_distribution = []
-    distributions = ["uniform", "zipf", "normal", "arima"]
+    distributions = ["uniform", "zipf", "normal"]
     # distributions = ["arima"]
     for distribution in distributions:
         print(f"Distribution: {distribution}")
-        requests, history = utils.get_requests_from_distribution(distribution, library_size, num_of_requests, history_size)
-        request_vectors, history_vectors = utils.convert_to_vectors(requests, history, library_size)
+        requests = utils.get_requests_from_distribution(distribution, library_size, num_of_requests)
+        history = utils.get_requests_from_distribution(distribution, library_size, history_size)
+        # Shuffling so it is not always guaranteed that the file 1 will have the highest chance of getting requested.
+        a = np.arange(0, library_size)
+        np.random.shuffle(a)
+        mapper = dict(zip(a, np.arange(0, library_size)))
+        # Convert to vectors with shuffled mapper
+        request_vecs = utils.convert_to_vectors(requests, library_size, mapper)
+        history_vecs = utils.convert_to_vectors(history, library_size, mapper)
+        print(len(request_vecs), len(history_vecs))
 
-        forecasters = [RandomForecaster(cache_size, library_size),
-                       RecommenderForecaster(kNNRecommender(10), library_size),
-                       ParrotForecaster(history_vectors + request_vectors, accuracy=0.5)]
+        forecasters = [RandomForecaster(library_size),
+                       NaiveForecaster(library_size),
+                       RecommenderForecaster(library_size, history_vecs),
+                       ParrotForecaster(np.concatenate((history_vecs, request_vecs), axis=0), accuracy=0.5, start_position=len(history_vecs))]
         accuracies = []
 
         # For every forecaster we get their predictions and store the accuracies
         for forecaster in forecasters:
-            forecaster.update(history_vectors)
-            forecaster_history = history_vectors.copy()
+            forecaster_history = list(history_vecs).copy()
             predictions = []
-            for req in request_vectors:
+            for req in request_vecs:
                 predictions.append(forecaster.predict())
                 forecaster_history.append(req)
-                forecaster.update(forecaster_history)
+                forecaster.update(req)
             # Calculate Score: Nr. of cache hits
             score = 0
             for i in range(len(predictions)):
-                score += np.dot(predictions[i], request_vectors[i])
+                score += np.dot(predictions[i], request_vecs[i])
             accuracies.append(score / len(predictions))
 
         accuracies_per_distribution.append(accuracies)
 
+    df = pd.DataFrame(accuracies_per_distribution, columns=forecaster_names, index=distributions)
+    df.to_csv("tables/forecaster accuracies per distribution.csv")
+    print(df)
+    return df
 
-    plot_accuracy_bar(accuracies_per_distribution, forecaster_names, distributions,
-                      title=f"Forecaster Accuracies, L={library_size}, N={num_of_requests}, H={history_size}")
-    plt.savefig(f"new_plots/{datetime.datetime.now().strftime('%d%b%y%H%M')}_forecaster_accuracies_L-{library_size}_H-{history_size}_N-{num_of_requests}.png")
-    plt.show()
-    plt.close()
+def all_forecasters_movielens(cache_size, library_size):
+    accuracies_per_distribution = []
+    # distributions = ["arima"]
+    print("MovieLens")
+    train, val, test = utils.get_movie_lens_split("ml-latest-small/ml-latest-small", library_limit=library_size)
+
+    train_vecs = utils.convert_to_vectors(train, library_size)
+    val_vecs = utils.convert_to_vectors(val, library_size)
+    test_vecs = utils.convert_to_vectors(test, library_size)
+    print(len(train_vecs), len(val_vecs), len(test_vecs))
+
+    forecasters = [RandomForecaster(library_size),
+                   NaiveForecaster(library_size),
+                   RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs))),
+                   ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs), axis=0), accuracy=0.5)]
+    accuracies = []
+
+    # For every forecaster we get their predictions and store the accuracies
+    for forecaster in forecasters:
+        forecaster_history = list(np.concatenate((train_vecs, val_vecs))).copy()
+        predictions = []
+        for req in test_vecs:
+            predictions.append(forecaster.predict())
+            forecaster_history.append(req)
+            forecaster.update(req)
+        # Calculate Score: Nr. of cache hits
+        score = 0
+        for i in range(len(predictions)):
+            score += np.dot(predictions[i], test_vecs[i])
+        accuracies.append(score / len(predictions))
+
+    accuracies_per_distribution.append(accuracies)
+
+    df = pd.DataFrame(accuracies_per_distribution, columns=forecaster_names)
+    df.to_csv(f"tables/forecaster accuracies for MovieLens {library_size}.csv")
+    print(df)
+
 
 if __name__ == "__main__":
-    all_forecasters_all_distributions(5, 300, 300, 0)
+    all_forecasters_all_distributions(5, 100, 1000, 9000)
     # all_forecasters_all_distributions(15, 1000, 1000, 20)
     # all_forecasters_all_distributions(15, 1000, 1000, 100)
+    all_forecasters_movielens(5, 100)
+    # all_forecasters_movielens(5, 200)
+    # all_forecasters_movielens(5, 300)
+    # all_forecasters_movielens(5, 400)

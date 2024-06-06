@@ -56,7 +56,7 @@ class OFTRL:
         prediction = self.predictor.predict()
         self.prediction_log.append(prediction)
         # update predictor with new request after predicting
-        self.predictor.update(self.request_log)
+        self.predictor.update(request)
 
         # Take a random cache state if it is first request.
         if len(self.request_log) <= 1:
