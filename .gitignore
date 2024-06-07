@@ -6,6 +6,7 @@ tests/runs*
 plots
 new_plots
 tables
+tcn/grid
 
 # PyCharm
 .idea

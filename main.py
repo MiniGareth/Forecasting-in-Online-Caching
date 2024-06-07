@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 
 import utils
 from forecasters.ArimaForecaster import ArimaForecaster
+from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
@@ -187,6 +188,9 @@ def graph_oftrl_regret(forecasters_options, distribution_options, cache_size, li
             forecaster = ParrotForecaster(np.concatenate((history_vecs, request_vecs)), start_position=history_size,
                                           accuracy=0.5)
             forecaster_list.append(forecaster)
+        if f == "mfr" or f == "most frequently requested":
+            forecaster = MFRForecaster(history_vecs)
+            forecaster_list.append(forecaster)
 
 
     # Collect regrets of different OFTRL forecaster combinations.
@@ -234,6 +238,9 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
             forecaster = ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs)), start_position=len(train) + len(val),
                                           accuracy=0.5)
             forecaster_list.append(forecaster)
+        if f == "mfr" or f == "most frequently requested":
+            forecaster = MFRForecaster(np.concatenate((train_vecs, val_vecs)))
+            forecaster_list.append(forecaster)
 
     # Collect regrets of different OFTRL forecaster combinations.
     regret_list_list = []
@@ -269,13 +276,13 @@ if __name__ == '__main__':
     # oftrl_diff_predict_acc(5, 100, 300, 100,"normal")
 
 
-    # graph_oftrl_regret(["random", "naive", "recommender", "parrot"], "uniform",
-    #                    5, 100, 300, 1700)
-    # graph_oftrl_regret(["random", "naive", "recommender", "parrot"], "zipf",
-    #                    5, 100, 300, 1700)
-    # graph_oftrl_regret(["random", "naive", "recommender", "parrot"], "normal",
-    #                    5, 100, 300, 1700)
+    graph_oftrl_regret(["random", "naive", "mfr", "recommender", "parrot"], "uniform",
+                       5, 100, 300, 1700)
+    graph_oftrl_regret(["random", "naive", "mfr", "recommender", "parrot"], "zipf",
+                       5, 100, 300, 1700)
+    graph_oftrl_regret(["random", "naive", "mfr", "recommender", "parrot"], "normal",
+                       5, 100, 300, 1700)
 
-    graph_oftrl_regret_movielens(["random", "naive", "recommender", "parrot"], "ml-latest-small", 5, 100)
+    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "parrot"], "ml-latest-small", 5, 100)
 
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

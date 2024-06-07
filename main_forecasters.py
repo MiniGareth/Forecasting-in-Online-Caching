@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 
 import utils
+from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RandomForecaster import RandomForecaster
@@ -14,7 +15,7 @@ from forecasters.RecommenderForecaster import RecommenderForecaster
 from plotters import plot_utility_bar
 from recommender.kNNRecommender import kNNRecommender
 
-forecaster_names = ["Random Forecaster", "Naive Forecaster", "KNN Recommender", "Parrot 50"]
+forecaster_names = ["Random Forecaster", "Naive Forecaster", "Most Frequently Requested", "KNN Recommender", "Parrot 50"]
 
 def all_forecasters_all_distributions(cache_size, library_size, num_of_requests, history_size):
     utilities_per_distribution = []
@@ -35,6 +36,7 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
 
         forecasters = [RandomForecaster(library_size),
                        NaiveForecaster(library_size),
+                       MFRForecaster(history_vecs),
                        RecommenderForecaster(library_size, history_vecs),
                        ParrotForecaster(np.concatenate((history_vecs, request_vecs), axis=0), accuracy=0.5, start_position=len(history_vecs))]
         utilities = []
@@ -73,6 +75,7 @@ def all_forecasters_movielens(cache_size, library_size):
 
     forecasters = [RandomForecaster(library_size),
                    NaiveForecaster(library_size),
+                   MFRForecaster(np.concatenate((train_vecs, val_vecs))),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs))),
                    ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs), axis=0), accuracy=0.5)]
     utilities = []
