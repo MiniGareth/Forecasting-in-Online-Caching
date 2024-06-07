@@ -23,6 +23,7 @@ from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RandomForecaster import RandomForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
+from forecasters.TCNForecaster import TCNForecaster
 from recommender.kNNRecommender import kNNRecommender
 from tcn.models import TemporalConvNet
 
@@ -305,6 +306,23 @@ def test_mfr_foreccaster(library_size=100, requests_num=200, history_num=1000):
     print(f"Library size: {library_size}, Request num: {requests_num}, History num: {history_num}")
     print(f"Average Utility: {score / requests_num:.5f}")
 
+def test_tcn_forecaster(library_size=100):
+    train, val, test = utils.get_movie_lens_split("../ml-latest-small/ml-latest-small", library_limit=library_size)
+
+
+    train_vec = utils.convert_to_vectors(train, library_size)
+    val_vec = utils.convert_to_vectors(val, library_size)
+    test_vec = utils.convert_to_vectors(test, library_size)
+
+    forecaster = TCNForecaster(model_path="../tcn/tcn_best", history=np.concatenate((train_vec, val_vec)))
+
+    score, predictions = test_forecaster_score(forecaster, test_vec)
+
+    print("================================================================================")
+    print("Most Frequently Requested Forecaster:")
+    print(f"Library size: {library_size}, Request num: {len(test)}, History num: {len(train) + len(val)}")
+    print(f"Average Utility: {score / len(test):.5f}")
+
 
 if __name__ == "__main__":
     # test_recommender_uniform(100, 50, 500)
@@ -317,5 +335,6 @@ if __name__ == "__main__":
     # test_naive_movielens()
     # test_arima_movielens()
     # test_tcn_movielens_darts()
-    test_mfr_foreccaster()
+    # test_mfr_foreccaster()
+    test_tcn_forecaster()
     pass

@@ -41,7 +41,7 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
             print_every_epoch=10
         )
         # Load weights and biases of model
-        model = model.load_state_dict(torch.load(model_folder + "_best"))
+        model.load_state_dict(torch.load(model_folder + "_best"))
         # Return hyper parameters, model and loss
         if best_tuple[2] is None or best_val_loss < best_tuple[2]:
             return hyper_params.copy(), model, best_val_loss
@@ -61,6 +61,8 @@ def test_model(model, test_loader):
     total_loss = 0
     total_utility = 0
     for batch_index, (x_, y_) in enumerate(test_loader):
+        print(x_)
+        print(x_.shape)
         x_ = Variable(x_)
         y_ = Variable(y_)
         if model.gpu:
@@ -133,7 +135,7 @@ def test_tcn_movielens(library_size=None, request_limit=None):
         scheduler=None,
         print_every_epoch=10
     )
-    model = model.load_state_dict(torch.load(models_folder + "_best"))
+    model.load_state_dict(torch.load(models_folder + "_best"))
     # Test the model on the test loader
     test_model(model, test_loader)
 
@@ -175,8 +177,61 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
     print(best_hyper_params)
     test_model(best_model, test_loader)
 
+def test_best_tcn():
+    # The best hyperparameters
+    hyper_params = {
+        'num_inputs': 100,
+        'num_filters': 40,
+        'num_layers': 8,
+        'kernel_size': 6,
+        'dropout': 0.2,
+        'num_classes': 100,
+        'learning_rate': 0.1
+    }
+    postfix = (f"i{hyper_params['num_inputs']}f{hyper_params['num_filters']}"
+               f"l{hyper_params['num_layers']}k{hyper_params['kernel_size']}"
+               f"d{hyper_params['dropout']}c{hyper_params['num_classes']}r{hyper_params['learning_rate']}")
+    runs_folder = f"tcn/grid/runs_{postfix}/"
+    model_folder = f"tcn/grid/models/{postfix}"
+
+    request_limit = None
+    library_size = 100
+    float_tensor_transform = lambda x: torch.tensor(x).float()
+    train_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="train", library_limit=library_size,
+                                     request_limit=request_limit, transform=float_tensor_transform)
+    val_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="validation",
+                                   library_limit=library_size,
+                                   request_limit=request_limit, transform=float_tensor_transform)
+    test_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="test", library_limit=library_size,
+                                    request_limit=request_limit, transform=float_tensor_transform)
+    # Create Data Loaders
+    batch_size = 64
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    # Train and evaluate model
+    model = TemporalConvNet(
+        num_inputs=hyper_params["num_inputs"],
+        num_channels=[hyper_params["num_filters"]] * hyper_params["num_layers"],
+        kernel_size=hyper_params["kernel_size"],
+        dropout=hyper_params["dropout"],
+        runs_folder=runs_folder,
+        mode="classification",
+        num_classes=hyper_params["num_classes"],
+        gpu=True
+    )
+    model.cuda()
+    # Load weights and biases of model
+    model.load_state_dict(torch.load(model_folder + "_best"))
+    # model.load_state_dict(torch.load("tcn/tcn_best"))
+    print(model_folder)
+    # test_model(model, train_loader)
+    test_model(model, val_loader)
+    test_model(model, test_loader)
 
 if __name__ == "__main__":
     # test_tcn_movielens(100, None)
     # test_tcn_movielens(200, None)
-    find_tcn_grid_search_movielens(100, None)
+    # find_tcn_grid_search_movielens(100, None)
+    test_best_tcn()
