@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import plotters
 
 # Plot average regret over time in linear and logarithmic scale
-regret_df = pd.read_csv("tables/07Jun241713_C-5_L-100_H-14566_N-1619_MovieLens.csv", index_col=0)
+regret_df = pd.read_csv("tables/13Jun241520_C-5_L-100_H-14566_N-1619_MovieLens.csv", index_col=0)
 
 
 for i in regret_df:
+    if i == "parrot":
+        continue
     plotters.plot_average_regret(regret_df[i], label=i, title="Logarithmic Average Regret from MovieLens")
 
 plt.legend(loc='upper right')
@@ -17,6 +19,8 @@ plt.ylabel(f"$\log (R_T / T)$")
 plt.show()
 
 for i in regret_df:
+    if i == "parrot":
+        continue
     plotters.plot_average_regret(regret_df[i], label=i, title="Average Regret from MovieLens")
 
 plt.legend(loc='upper right')
@@ -35,9 +39,9 @@ for i in pred_err_df:
 
 avg_pred_err = np.array(avg_pred_err)
 
-names = ["random", "naive", "mfr", "recommender", "tcn"]
+names = ["random", "naive", "mfr", "recommender", "recommender one-hot", "tcn", "tcn one-hot"]
 for i, vals in enumerate(avg_pred_err):
-    if i == 5:
+    if i == 7:
         continue
 
     plt.plot(vals, label=names[i])
@@ -61,9 +65,8 @@ for i in pred_err_df:
 
 avg_pred_err = np.array(avg_pred_err)
 
-names = ["random", "naive", "mfr", "recommender", "tcn"]
 for i, vals in enumerate(avg_pred_err):
-    if i == 5:
+    if i == 7:
         continue
 
     plt.plot(vals, label=names[i])
@@ -87,9 +90,8 @@ for i in pred_err_df:
 
 avg_pred_err = np.array(avg_pred_err)
 
-names = ["random", "naive", "mfr", "recommender", "tcn"]
 for i, vals in enumerate(avg_pred_err):
-    if i == 5:
+    if i == 7:
         continue
 
     plt.plot(vals, label=names[i])

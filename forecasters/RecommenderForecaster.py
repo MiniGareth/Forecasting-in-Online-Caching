@@ -12,7 +12,7 @@ class RecommenderForecaster(Forecaster):
     """
     This class uses a recommendation system to predict the future.
     """
-    def __init__(self, library_size: int, history: np.ndarray, horizon=1, k=None):
+    def __init__(self, library_size: int, history: np.ndarray, horizon=1, k=None, one_hot=False):
         super().__init__(horizon)
         self.k = library_size - 1 if k is None else k
         self.recommender = kNNRecommender(self.k)
@@ -21,6 +21,7 @@ class RecommenderForecaster(Forecaster):
         self.library_size = library_size
         # Train KNN
         self._train(history)
+        self.one_hot = one_hot
 
 
     def predict(self) -> np.ndarray:
@@ -44,6 +45,9 @@ class RecommenderForecaster(Forecaster):
             for i, rec in enumerate(recommendations):
                 result[int(rec)] += 1 / (i + 1)
             result = result/np.sum(result)  # Normalize the result vector
+
+        if self.one_hot is True:
+            return (np.max(result) == result).astype(np.float_)
 
         return result
 

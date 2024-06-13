@@ -232,6 +232,9 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
         if f == "recommender":
             forecaster = RecommenderForecaster(library_limit, np.concatenate((train_vecs, val_vecs)))
             forecaster_list.append(forecaster)
+        if f == "recommender one-hot":
+            forecaster = RecommenderForecaster(library_limit, np.concatenate((train_vecs, val_vecs)), one_hot=True)
+            forecaster_list.append(forecaster)
         if f == "naive":
             forecaster = NaiveForecaster(library_limit)
             forecaster_list.append(forecaster)
@@ -244,6 +247,9 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
             forecaster_list.append(forecaster)
         if f == "tcn":
             forecaster = TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs)))
+            forecaster_list.append(forecaster)
+        if f == "tcn one-hot":
+            forecaster = TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs)), one_hot=True)
             forecaster_list.append(forecaster)
 
     # Collect regrets of different OFTRL forecaster combinations.
@@ -287,6 +293,6 @@ if __name__ == '__main__':
     # graph_oftrl_regret(["random", "naive", "mfr", "recommender", "parrot"], "normal",
     #                    5, 100, 300, 1700)
 
-    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "tcn", "parrot"], "ml-latest-small", 5, 100)
+    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "recommender one-hot", "tcn", "tcn one-hot", "parrot"], "ml-latest-small", 5, 100)
 
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

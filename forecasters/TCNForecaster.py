@@ -7,7 +7,7 @@ from tcn.models import TemporalConvNet
 
 
 # Hyper parameters found to be best for MovieLens
-default_params = {
+nllloss_params = {
         'num_inputs': 100,
         'num_filters': 40,
         'num_layers': 8,
@@ -18,16 +18,21 @@ default_params = {
     }
 class TCNForecaster(Forecaster):
     def __init__(self, num_inputs=None, num_filters=None, num_layers=None, kernel_size=None, dropout=None, num_classes=None,
-                 gpu=True, model_path=None, history=None, horizon=128):
+                 gpu=True, model_path=None, history=None, horizon=128, one_hot=False, custom_params=None):
         super().__init__(horizon)
+
+        if custom_params is None:
+            custom_params = nllloss_params
+        self.one_hot = one_hot
+
         self.model = TemporalConvNet(
-            num_inputs=num_inputs if num_inputs is not None else default_params['num_inputs'],
-            num_channels=[num_filters if num_filters is not None else default_params['num_filters']] * (num_layers if num_layers is not None else default_params['num_layers']),
-            kernel_size=kernel_size if kernel_size is not None else default_params['kernel_size'],
-            dropout=dropout if dropout is not None else default_params['dropout'],
+            num_inputs=num_inputs if num_inputs is not None else custom_params['num_inputs'],
+            num_channels=[num_filters if num_filters is not None else custom_params['num_filters']] * (num_layers if num_layers is not None else custom_params['num_layers']),
+            kernel_size=kernel_size if kernel_size is not None else custom_params['kernel_size'],
+            dropout=dropout if dropout is not None else custom_params['dropout'],
             runs_folder="runs",
             mode="classification",
-            num_classes=num_classes if num_classes is not None else default_params['num_classes'],
+            num_classes=num_classes if num_classes is not None else custom_params['num_classes'],
             gpu=gpu
         )
         if gpu is True:
@@ -35,6 +40,7 @@ class TCNForecaster(Forecaster):
 
         if model_path is not None:
             self.model.load_state_dict(torch.load(model_path))
+            self.model.eval()
 
         if history is None:
             self.history = []
@@ -54,6 +60,9 @@ class TCNForecaster(Forecaster):
         output = self.model(input)
         prediction = torch.exp(output)
         prediction = prediction.cpu().detach().numpy()
+        if self.one_hot is True:
+            return (np.max(prediction[0]) == prediction[0]).astype(np.float_)
+
         return prediction[0]
 
     def update(self, latest_req:np.ndarray):

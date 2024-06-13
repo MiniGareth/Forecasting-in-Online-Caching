@@ -16,8 +16,8 @@ from forecasters.RecommenderForecaster import RecommenderForecaster
 from plotters import plot_utility_bar
 from recommender.kNNRecommender import kNNRecommender
 
-forecaster_names = ["Random Forecaster", "Naive Forecaster", "Most Frequently Requested", "KNN Recommender",
-                    "TCN Forecaster", "Parrot 50"]
+forecaster_names = ["random", "naive", "mfr", "recommender", "recommender one-hot",
+                    "tcn", "tcn one-hot", "Parrot 50"]
 
 def all_forecasters_all_distributions(cache_size, library_size, num_of_requests, history_size):
     utilities_per_distribution = []
@@ -40,7 +40,9 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
                        NaiveForecaster(library_size),
                        MFRForecaster(history_vecs),
                        RecommenderForecaster(library_size, history_vecs),
+                       RecommenderForecaster(library_size, history_vecs, one_hot=True),
                        TCNForecaster(model_path="tcn/tcn_best", history=history_vecs),
+                       TCNForecaster(model_path="tcn/tcn_best", history=history_vecs, one_hot=True),
                        ParrotForecaster(np.concatenate((history_vecs, request_vecs), axis=0), accuracy=0.5, start_position=len(history_vecs))]
         utilities = []
 
@@ -78,7 +80,9 @@ def all_forecasters_movielens(cache_size, library_size):
                    NaiveForecaster(library_size),
                    MFRForecaster(np.concatenate((train_vecs, val_vecs))),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs))),
+                   RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs)), one_hot=True),
                    TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs))),
+                   TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs)), one_hot=True),
                    ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs), axis=0), accuracy=0.5,
                                     start_position=len(train_vecs) + len(val_vecs))
                    ]
@@ -118,7 +122,7 @@ def all_forecasters_movielens(cache_size, library_size):
     df_all_prediction_errs.to_csv(f"tables/forecaster prediction_errs for MovieLens {library_size}.csv")
     print(df_all_prediction_errs)
 
-    stats = [np.sum(utilities, axis=1)/len(predictions), np.sum(accuracies, axis=1)/len(predictions), np.sum(prediction_errs, axis=1)/len(predictions)]
+    stats = [np.sum(utilities, axis=1)/len(predictions), np.sum(accuracies, axis=1)/len(predictions) * 100, np.sum(prediction_errs, axis=1)/len(predictions)]
     df_stats = pd.DataFrame(np.array(stats).T, columns=["Utility", "Accuracy", "Prediction Error"], index=forecaster_names)
     df_stats.to_csv(f"tables/forecaster stats for MovieLens {library_size}.csv")
     print(df_stats)
