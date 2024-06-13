@@ -170,7 +170,7 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
         "kernel_size": [6, 8],
         "dropout": [0.2],
         "num_classes": [library_size],
-        "learning_rate": [0.1],
+        "learning_rate": [0.1, 0.01],
     }
     best_hyper_params, best_model, best_val_loss = grid_search_tcn(train_loader, val_loader, hyper_parameters, 0)
 

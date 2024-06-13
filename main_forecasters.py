@@ -66,8 +66,6 @@ def all_forecasters_all_distributions(cache_size, library_size, num_of_requests,
     return df
 
 def all_forecasters_movielens(cache_size, library_size):
-    utilities_per_distribution = []
-    # distributions = ["arima"]
     print("MovieLens")
     train, val, test = utils.get_movie_lens_split("ml-latest-small/ml-latest-small", library_limit=library_size)
 
@@ -85,8 +83,9 @@ def all_forecasters_movielens(cache_size, library_size):
                                     start_position=len(train_vecs) + len(val_vecs))
                    ]
     utilities = []
-
-    # For every forecaster we get their predictions and store the utilities
+    accuracies = []
+    prediction_errs = []
+    # For every forecaster we get their predictions and store the utilities, accuracies, and prediction errors
     for forecaster in forecasters:
         forecaster_history = list(np.concatenate((train_vecs, val_vecs))).copy()
         predictions = []
@@ -95,20 +94,38 @@ def all_forecasters_movielens(cache_size, library_size):
             forecaster_history.append(req)
             forecaster.update(req)
         # Calculate Score: Nr. of cache hits
-        utility = 0
+        utility_list = []
+        accuracy_list = []
+        prediction_err_list = []
         for i in range(len(predictions)):
-            utility += np.dot(predictions[i], test_vecs[i])
-        utilities.append(utility / len(predictions))
+            utility_list.append(np.dot(predictions[i], test_vecs[i]))
+            accuracy_list.append(int(((predictions[i] == np.max(predictions[i])) == test_vecs[i]).all()))
+            prediction_err_list.append(np.linalg.norm((predictions[i] - test_vecs[i]), ord=2) ** 2)
+        utilities.append(utility_list)
+        accuracies.append(accuracy_list)
+        prediction_errs.append(prediction_err_list)
 
-    utilities_per_distribution.append(utilities)
 
-    df = pd.DataFrame(utilities_per_distribution, columns=forecaster_names)
-    df.to_csv(f"tables/forecaster utilities for MovieLens {library_size}.csv")
-    print(df)
+    df_all_prediction_errs = pd.DataFrame(np.array(utilities).T, columns=forecaster_names)
+    df_all_prediction_errs.to_csv(f"tables/forecaster utilities for MovieLens {library_size}.csv")
+    print(df_all_prediction_errs)
+
+    df_all_accuracies = pd.DataFrame(np.array(accuracies).T*100, columns=forecaster_names)
+    df_all_accuracies.to_csv(f"tables/forecaster accuracies for MovieLens {library_size}.csv")
+    print(df_all_accuracies)
+
+    df_all_prediction_errs = pd.DataFrame(np.array(prediction_errs).T, columns=forecaster_names)
+    df_all_prediction_errs.to_csv(f"tables/forecaster prediction_errs for MovieLens {library_size}.csv")
+    print(df_all_prediction_errs)
+
+    stats = [np.sum(utilities, axis=1)/len(predictions), np.sum(accuracies, axis=1)/len(predictions), np.sum(prediction_errs, axis=1)/len(predictions)]
+    df_stats = pd.DataFrame(np.array(stats).T, columns=["Utility", "Accuracy", "Prediction Error"], index=forecaster_names)
+    df_stats.to_csv(f"tables/forecaster stats for MovieLens {library_size}.csv")
+    print(df_stats)
 
 
 if __name__ == "__main__":
-    all_forecasters_all_distributions(5, 100, 1000, 9000)
+    # all_forecasters_all_distributions(5, 100, 1600, 16000 - 1600)
     # all_forecasters_all_distributions(15, 1000, 1000, 20)
     # all_forecasters_all_distributions(15, 1000, 1000, 100)
     all_forecasters_movielens(5, 100)

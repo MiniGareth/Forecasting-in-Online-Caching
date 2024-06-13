@@ -27,7 +27,7 @@ def plot_average_regret(regret_list, title=None, label=None):
     plt.xlabel("Request nr.")
     plt.ylabel(f"$R_T / T$")
     plt.xticks(np.arange(len(regret_list), step=len(regret_list)//10))
-    plt.plot([regret / (i + 1) for i, regret in enumerate(regret_list)], label=label)
+    plt.plot([regret / (i + 1) for i, regret in enumerate(regret_list)], label=label, linewidth=1)
     # plt.show()
 
 def plot_average_utility(utility_list, title=None, label=None):
