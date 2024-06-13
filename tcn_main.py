@@ -12,7 +12,8 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
         print(f"Trying: {hyper_params}")
         postfix = (f"i{hyper_params['num_inputs']}f{hyper_params['num_filters']}"
                    f"l{hyper_params['num_layers']}k{hyper_params['kernel_size']}"
-                   f"d{hyper_params['dropout']}c{hyper_params['num_classes']}r{hyper_params['learning_rate']}")
+                   f"d{hyper_params['dropout']}c{hyper_params['num_classes']}r{hyper_params['learning_rate']}"
+                   f" {hyper_params['loss_function']}")
         runs_folder = f"tcn/grid/runs_{postfix}/"
         model_folder = f"tcn/grid/models/{postfix}"
         # Train and evaluate model
@@ -33,7 +34,7 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
             train_loader=train_loader,
             optimizer=torch.optim.SGD(model.parameters(), lr=hyper_params["learning_rate"]),
             clip=-1,
-            loss_function=nn.NLLLoss(),
+            loss_function=hyper_params["loss_function"],
             save_every_epoch=10,
             model_path=model_folder,
             valid_loader=val_loader,
@@ -60,6 +61,7 @@ def grid_search_tcn(train_loader, val_loader, hyper_params: dict, key_idx: int, 
 def test_model(model, test_loader):
     total_loss = 0
     total_utility = 0
+    total_accuracy = 0
     for batch_index, (x_, y_) in enumerate(test_loader):
         print(x_)
         print(x_.shape)
@@ -74,10 +76,12 @@ def test_model(model, test_loader):
         # Utility is the average percentage of a cache hit
         utility = torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
         total_utility += utility
+        total_accuracy += torch.mean(torch.argmax(output, axis=1) == y_, dtype=torch.float32)
     print("======================================================================================================")
     print("Test data")
     print(f"Loss: {total_loss / (batch_index + 1)}")
     print(f"utility: {total_utility / (batch_index + 1)}")
+    print(f"accuracy: {total_accuracy / (batch_index + 1)}")
 
 
 def test_tcn_movielens(library_size=None, request_limit=None):
@@ -111,6 +115,8 @@ def test_tcn_movielens(library_size=None, request_limit=None):
     learning_rate = 0.1
     num_filters = 50
     num_layers = 10
+    # loss_function = nn.NLLLoss()
+    loss_function = nn.MSELoss()
 
     model = TemporalConvNet(
         num_inputs=num_inputs,
@@ -128,7 +134,7 @@ def test_tcn_movielens(library_size=None, request_limit=None):
         train_loader=train_loader,
         optimizer=torch.optim.SGD(model.parameters(), lr=learning_rate),
         clip=-1,
-        loss_function=nn.NLLLoss(),
+        loss_function=loss_function,
         save_every_epoch=10,
         model_path=models_folder,
         valid_loader=val_loader,
@@ -171,6 +177,7 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
         "dropout": [0.2],
         "num_classes": [library_size],
         "learning_rate": [0.1, 0.01],
+        "loss_function": [nn.MSELoss()]
     }
     best_hyper_params, best_model, best_val_loss = grid_search_tcn(train_loader, val_loader, hyper_parameters, 0)
 
@@ -233,5 +240,5 @@ def test_best_tcn():
 if __name__ == "__main__":
     # test_tcn_movielens(100, None)
     # test_tcn_movielens(200, None)
-    # find_tcn_grid_search_movielens(100, None)
-    test_best_tcn()
+    find_tcn_grid_search_movielens(100, None)
+    # test_best_tcn()

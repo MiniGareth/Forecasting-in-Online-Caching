@@ -27,4 +27,4 @@ python -m pip install --user cvxpy
 python -m pip install --user statsmodels
 python -m pip install --user tensorboard
 
-srun python tcn_main.py > tcn_main_gpu.log
+srun python tcn_main.py > tcn_main_gpu_mse.log
