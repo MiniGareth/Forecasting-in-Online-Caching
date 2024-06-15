@@ -36,6 +36,7 @@ class GenericTemporalConvNet(nn.Module):
                 self.last_layer.cuda()
                 self.activation.cuda()
 
+
     def forward(self, x):
         if self.mode == "classification":
             output = self.network(x)
@@ -62,13 +63,13 @@ class GenericTemporalConvNet(nn.Module):
                     y_ = y_.cuda()
                 optimizer.zero_grad()
                 output = self(x_)
-                loss = loss_function(output, y_)
+                loss = loss_function(output.float(), y_.float())
                 loss.backward()
                 if clip > 0:
                     torch.nn.utils.clip_grad_norm_(self.parameters(), clip)
                 optimizer.step()
                 total_loss += loss.item()
-                total_utility += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
+                # total_utility += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
             cur_loss = total_loss / (batch_idx + 1)
             if (epoch + 1) % print_every_epoch == 0:
                 print("Epoch: " + str(epoch))
@@ -96,8 +97,8 @@ class GenericTemporalConvNet(nn.Module):
                     loss = loss_function(output, y_)
                     if self.mode == "classification":
                         pred = output.data.max(1, keepdim=True)[1]
-                        correct += pred.eq(y_.data.view_as(pred)).cpu().sum()
-                        total_utility += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
+                        # correct += pred.eq(y_.data.view_as(pred)).cpu().sum()
+                        # total_utility += torch.mean(torch.exp(output[torch.arange(output.shape[0]), y_]))
 
                     test_loss += loss.item()
 

@@ -146,16 +146,16 @@ def test_tcn_movielens(library_size=None, request_limit=None):
     test_model(model, test_loader)
 
 
-def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
+def find_tcn_grid_search_movielens(library_size=None, request_limit=None, mode="classification"):
     # Create train, validation, and test datasets
     float_tensor_transform = lambda x: torch.tensor(x).float()
     train_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="train", library_limit=library_size,
-                                     request_limit=request_limit, transform=float_tensor_transform)
+                                     request_limit=request_limit, transform=float_tensor_transform, mode=mode)
     val_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="validation",
                                    library_limit=library_size,
-                                   request_limit=request_limit, transform=float_tensor_transform)
+                                   request_limit=request_limit, transform=float_tensor_transform, mode=mode)
     test_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="test", library_limit=library_size,
-                                    request_limit=request_limit, transform=float_tensor_transform)
+                                    request_limit=request_limit, transform=float_tensor_transform, mode=mode)
 
     # Create Data Loaders
     batch_size = 128
@@ -177,7 +177,8 @@ def find_tcn_grid_search_movielens(library_size=None, request_limit=None):
         "dropout": [0.2],
         "num_classes": [library_size],
         "learning_rate": [0.1, 0.01],
-        "loss_function": [nn.MSELoss()]
+        "loss_function": [nn.MSELoss()],
+        "mode": [mode]
     }
     best_hyper_params, best_model, best_val_loss = grid_search_tcn(train_loader, val_loader, hyper_parameters, 0)
 
@@ -205,12 +206,12 @@ def test_best_tcn():
     library_size = 100
     float_tensor_transform = lambda x: torch.tensor(x).float()
     train_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="train", library_limit=library_size,
-                                     request_limit=request_limit, transform=float_tensor_transform)
+                                     request_limit=request_limit, transform=float_tensor_transform, target_transform=float_tensor_transform)
     val_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="validation",
                                    library_limit=library_size,
-                                   request_limit=request_limit, transform=float_tensor_transform)
+                                   request_limit=request_limit, transform=float_tensor_transform, target_transform=float_tensor_transform)
     test_dataset = MovieLensDataset("ml-latest-small/ml-latest-small/", split="test", library_limit=library_size,
-                                    request_limit=request_limit, transform=float_tensor_transform)
+                                    request_limit=request_limit, transform=float_tensor_transform, target_transform=float_tensor_transform)
     # Create Data Loaders
     batch_size = 64
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -240,5 +241,6 @@ def test_best_tcn():
 if __name__ == "__main__":
     # test_tcn_movielens(100, None)
     # test_tcn_movielens(200, None)
-    find_tcn_grid_search_movielens(100, None)
+    # find_tcn_grid_search_movielens(100, None, mode="classification")
+    find_tcn_grid_search_movielens(100, None, mode="mse")
     # test_best_tcn()

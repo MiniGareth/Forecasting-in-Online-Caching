@@ -8,7 +8,8 @@ import utils
 
 
 class MovieLensDataset(Dataset):
-    def __init__(self, path, library_limit=1000, request_limit=None, horizon=128, split="train", transform=None, target_transform=None):
+    def __init__(self, path, library_limit=1000, request_limit=None, horizon=128, split="train", transform=None,
+                 target_transform=None, mode="classification"):
         ratings = pd.read_csv(os.path.join(path + "ratings.csv"))
         library = np.array(ratings["movieId"].value_counts().reset_index())[:library_limit, 0]
 
@@ -38,11 +39,13 @@ class MovieLensDataset(Dataset):
         elif split == "test":
             requests = requests[int(len(requests)*0.9):]
         # Shift request by 1 into the future so that the past t-1 values should predict value at time t
-        self.data = utils.convert_to_vectors(np.roll(requests, 1), library_size=len(library)).T
+        self.library_size = len(library)
+        self.data = utils.convert_to_vectors(np.roll(requests, 1), library_size=self.library_size).T
         self.labels = requests[:request_limit]
         self.horizon = horizon
         self.transform = transform
         self.target_transform = target_transform
+        self.mode = mode
 
     def __len__(self):
         return len(self.labels)
@@ -54,6 +57,11 @@ class MovieLensDataset(Dataset):
         requests = np.concatenate((np.zeros((self.data.shape[0], -1* past_idx if past_idx < 0 else 0)),
                                    self.data[:, np.maximum(0, past_idx):idx + 1]), axis=1)
         label = self.labels[idx]
+
+        if self.mode == "mse":
+            temp = np.zeros(self.library_size)
+            temp[label] = 1
+            label = temp
 
         if self.transform:
             requests = self.transform(requests)
