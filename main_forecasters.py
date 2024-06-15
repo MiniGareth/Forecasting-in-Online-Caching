@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 
 import utils
+from forecasters.PopularityForecaster import PopularityForecaster
 from forecasters.TCNForecaster import TCNForecaster
 from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
@@ -16,7 +17,7 @@ from forecasters.RecommenderForecaster import RecommenderForecaster
 from plotters import plot_utility_bar
 from recommender.kNNRecommender import kNNRecommender
 
-forecaster_names = ["random", "naive", "mfr", "recommender", "recommender one-hot",
+forecaster_names = ["random", "naive", "mfr", "recommender", "recommender one-hot", "popularity", "popularity one-hot",
                     "tcn", "tcn one-hot", "Parrot 50"]
 
 def all_forecasters_all_distributions(cache_size, library_size, num_of_requests, history_size):
@@ -81,6 +82,8 @@ def all_forecasters_movielens(cache_size, library_size):
                    MFRForecaster(np.concatenate((train_vecs, val_vecs))),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs))),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs)), one_hot=True),
+                   PopularityForecaster(np.concatenate((train_vecs, val_vecs))),
+                   PopularityForecaster(np.concatenate((train_vecs, val_vecs)), one_hot=True),
                    TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs))),
                    TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs)), one_hot=True),
                    ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs), axis=0), accuracy=0.5,
