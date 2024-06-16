@@ -18,6 +18,7 @@ from torchvision.transforms import ToTensor, transforms
 import utils
 from dataset.MovieLensDataset import MovieLensDataset
 from forecasters.ArimaForecaster import ArimaForecaster
+from forecasters.DESForecaster import DESForecaster
 from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
@@ -39,7 +40,7 @@ def test_forecaster_score(forecaster, requests_vec) -> float:
     for i, req in enumerate(requests_vec):
         print(f"{i}, ", end="")
         predictions_vec.append(forecaster.predict())
-        # print(predictions[-1])
+        print(predictions_vec[-1])
         forecaster.update(req)
     print()
 
@@ -323,6 +324,22 @@ def test_tcn_forecaster(library_size=100):
     print(f"Library size: {library_size}, Request num: {len(test)}, History num: {len(train) + len(val)}")
     print(f"Average Utility: {score / len(test):.5f}")
 
+def test_des_movielens(library_size=100):
+    train, val, test = utils.get_movie_lens_split("../ml-latest-small/ml-latest-small", library_limit=library_size)
+
+    train_vec = utils.convert_to_vectors(train, library_size)
+    val_vec = utils.convert_to_vectors(val, library_size)
+    test_vec = utils.convert_to_vectors(test, library_size)
+
+    forecaster = DESForecaster(history=np.concatenate((train_vec, val_vec)), horizon=100, one_hot=True)
+
+    score, predictions = test_forecaster_score(forecaster, test_vec)
+
+    print("================================================================================")
+    print("Most Frequently Requested Forecaster:")
+    print(f"Library size: {library_size}, Request num: {len(test)}, History num: {len(train) + len(val)}")
+    print(f"Average Utility: {score / len(test):.5f}")
+
 
 if __name__ == "__main__":
     # test_recommender_uniform(100, 50, 500)
@@ -336,5 +353,6 @@ if __name__ == "__main__":
     # test_arima_movielens()
     # test_tcn_movielens_darts()
     # test_mfr_foreccaster()
-    test_tcn_forecaster()
+    # test_tcn_forecaster()
+    test_des_movielens()
     pass

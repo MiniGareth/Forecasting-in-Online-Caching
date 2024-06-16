@@ -4,7 +4,7 @@ from forecasters.Forecaster import Forecaster
 
 # 1450 and 20
 class PopularityForecaster(Forecaster):
-    def __init__(self, history, horizon=1450, one_hot=False):
+    def __init__(self, history, horizon, one_hot=False):
         super().__init__(horizon)
         self.history = list(history)
         self.library_size = len(history[0])
@@ -25,7 +25,13 @@ class PopularityForecaster(Forecaster):
         prediction = self.counter / np.sum(self.counter)
 
         if self.one_hot is True:
-            return (prediction == np.max(prediction)).astype(np.float_)
+            # In case there are multiple max numbers
+            result = np.zeros(self.library_size)
+            rand_idx = np.random.choice(np.where(prediction == np.max(prediction))[0])
+            result[rand_idx] = 1
+            assert np.sum(result) == 1
+            return result
+
         return prediction
 
     def update(self, latest_req: np.ndarray):
