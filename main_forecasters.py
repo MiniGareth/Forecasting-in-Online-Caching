@@ -17,7 +17,7 @@ from forecasters.RandomForecaster import RandomForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
 from plotters import plot_utility_bar
 from recommender.kNNRecommender import kNNRecommender
-
+forecaster_seed = 10
 forecaster_names = ["random", "naive", "mfr", "recommender", "recommender one-hot", "popularity", "popularity one-hot",
                     "tcn", "tcn one-hot", "des", "des on-hot", "Parrot 50"]
 
@@ -78,19 +78,19 @@ def all_forecasters_movielens(cache_size, library_size):
     test_vecs = utils.convert_to_vectors(test, library_size)
     print(len(train_vecs), len(val_vecs), len(test_vecs))
 
-    forecasters = [RandomForecaster(library_size),
+    forecasters = [RandomForecaster(library_size, seed=forecaster_seed),
                    NaiveForecaster(library_size),
                    MFRForecaster(np.concatenate((train_vecs, val_vecs))),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs))),
                    RecommenderForecaster(library_size, np.concatenate((train_vecs, val_vecs)), one_hot=True),
                    PopularityForecaster(np.concatenate((train_vecs, val_vecs)), 1450),
-                   PopularityForecaster(np.concatenate((train_vecs, val_vecs)), 20, one_hot=True),
+                   PopularityForecaster(np.concatenate((train_vecs, val_vecs)), 1580, one_hot=True),
                    TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs))),
                    TCNForecaster(model_path="tcn/tcn_best", history=np.concatenate((train_vecs, val_vecs)), one_hot=True),
                    DESForecaster(np.concatenate((train_vecs, val_vecs)), 1200),
-                   DESForecaster(np.concatenate((train_vecs, val_vecs)), 100, one_hot=True),
+                   DESForecaster(np.concatenate((train_vecs, val_vecs)), 1300, one_hot=True),
                    ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs), axis=0), accuracy=0.5,
-                                    start_position=len(train_vecs) + len(val_vecs))
+                                    start_position=len(train_vecs) + len(val_vecs), seed=forecaster_seed)
                    ]
     utilities = []
     accuracies = []

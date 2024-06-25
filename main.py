@@ -17,12 +17,15 @@ from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
 from forecasters.RandomForecaster import RandomForecaster
 from forecasters.TCNForecaster import TCNForecaster
+from forecasters.ZeroForecaster import ZeroForecaster
 from oftrl import OFTRL
 from plotters import plot_cummulative_regret, plot_average_regret
 from recommender.kNNRecommender import kNNRecommender
 
 tables_folder = "tables"
 new_plots_folder = "new_plots"
+forecaster_seed = 10
+oftrl_seed = 11
 
 def alphabet_test():
     cache_size = 5
@@ -36,7 +39,7 @@ def alphabet_test():
                                                idx_mapper=dict(zip(library, np.arange(len(library)))))
 
     forecaster = RecommenderForecaster(len(library), history_vecs)
-    oftrl = OFTRL(forecaster, cache_size, len(library))
+    oftrl = OFTRL(forecaster, cache_size, len(library), seed=oftrl_seed)
 
     regret_list = []
     regret_t_list = []
@@ -68,7 +71,7 @@ def arbitrary_random_test(cache_size, library_size, num_of_requests):
     # Initialize OFTRL
     predictor = RandomForecaster(cache_size, library_size)
     # predictor = RecommenderForecaster(kNNRecommender(1), library_size)
-    oftrl = OFTRL(predictor, cache_size, library_size)
+    oftrl = OFTRL(predictor, cache_size, library_size, seed=oftrl_seed)
     regret_list = []
 
     # Calculate regret for every request
@@ -107,8 +110,9 @@ def oftrl_diff_predict_acc(cache_size, library_size, num_of_requests, history_si
     accuracies = np.arange(0, 1.1, step=0.25)
     for acc in accuracies:
         print(f"Accuracy: {acc}")
-        predictor = ParrotForecaster(np.concatenate((history_vec, request_vec)), accuracy=acc, start_position=history_size)
-        oftrl = OFTRL(predictor, cache_size, library_size)
+        predictor = ParrotForecaster(np.concatenate((history_vec, request_vec)), accuracy=acc, start_position=history_size,
+                                     seed=forecaster_seed)
+        oftrl = OFTRL(predictor, cache_size, library_size, seed=oftrl_seed)
 
         # Calculate regret for every request
         regret_list = []
@@ -137,7 +141,7 @@ def oftrl_diff_predict_acc(cache_size, library_size, num_of_requests, history_si
 
 def oftrl_regret_list(request_vectors, history_vectors, forecaster, cache_size, library_size):
     # Initialize OFTRL
-    oftrl = OFTRL(forecaster, cache_size, library_size)
+    oftrl = OFTRL(forecaster, cache_size, library_size, seed=oftrl_seed)
 
     regret_list = []
     # Calculate regret for every request
@@ -224,10 +228,14 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
     val_vecs = utils.convert_to_vectors(val, library_limit)
     test_vecs = utils.convert_to_vectors(test, library_limit)
 
+    # Create the forecasters to calculate regret with
     forecaster_list = []
     for f in forecasters_options:
+        if f == "zero":
+            forecaster = ZeroForecaster(library_limit)
+            forecaster_list.append(forecaster)
         if f == "random":
-            forecaster = RandomForecaster(library_limit)
+            forecaster = RandomForecaster(library_limit, seed=forecaster_seed)
             forecaster_list.append(forecaster)
         if f == "recommender":
             forecaster = RecommenderForecaster(library_limit, np.concatenate((train_vecs, val_vecs)))
@@ -240,7 +248,7 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
             forecaster_list.append(forecaster)
         if f == "parrot":
             forecaster = ParrotForecaster(np.concatenate((train_vecs, val_vecs, test_vecs)), start_position=len(train) + len(val),
-                                          accuracy=0.5)
+                                          accuracy=0.5, seed=forecaster_seed)
             forecaster_list.append(forecaster)
         if f == "mfr" or f == "most frequently requested":
             forecaster = MFRForecaster(np.concatenate((train_vecs, val_vecs)))
@@ -255,7 +263,7 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
     # Collect regrets of different OFTRL forecaster combinations.
     regret_list_list = []
     for predictor in forecaster_list:
-        regret_list = oftrl_regret_list(test_vecs, np.concatenate((train_vecs, val_vecs)), predictor, cache_size, library_limit)
+        regret_list = oftrl_regret_list(np.array(test_vecs), np.concatenate((train_vecs, val_vecs)), predictor, cache_size, library_limit)
         regret_list_list.append(regret_list)
 
     # Plot the results on one graph
@@ -263,23 +271,23 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
         plot_average_regret(regret_list, label=f"{forecaster_name} Forecaster")
 
     filename = f"{datetime.datetime.now().strftime('%d%b%y%H%M')}_C-{cache_size}_L-{library_limit}_H-{len(train) +len(val)}_N-{len(test)}_MovieLens"
-    plt.title(f"Movielens requests with C = {cache_size}, L = {library_limit}, H ={history_percentage}")
-    plt.legend(loc="upper right")
-    plt.savefig(
-        f"{new_plots_folder}/{filename}.png")
-    plt.show()
-    plt.close()
     # Save data into csv
     df = pd.DataFrame(regret_list_list, index=forecasters_options)
     df = df.T
     print(df)
     df.to_csv(f"{tables_folder}/{filename}.csv")
 
+    plt.title(f"Movielens requests with C = {cache_size}, L = {library_limit}, H ={history_percentage}")
+    plt.legend(loc="upper right")
+    plt.savefig(
+        f"{new_plots_folder}/{filename}.png")
+    plt.show()
+    plt.close()
 
 
 if __name__ == '__main__':
     start_time = time.time() * 1000
-    alphabet_test()
+    # alphabet_test()
 
     # oftrl_diff_predict_acc(5, 100, 300, 100)
     # oftrl_diff_predict_acc(5, 100, 300, 100, "zipf")
@@ -293,6 +301,6 @@ if __name__ == '__main__':
     # graph_oftrl_regret(["random", "naive", "mfr", "recommender", "parrot"], "normal",
     #                    5, 100, 300, 1700)
 
-    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "recommender one-hot", "tcn", "tcn one-hot", "parrot"], "ml-latest-small", 5, 100)
+    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "recommender one-hot", "tcn", "tcn one-hot", "zero", "parrot"], "ml-latest-small", 5, 100)
 
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

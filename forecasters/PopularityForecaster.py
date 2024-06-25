@@ -2,7 +2,7 @@ import numpy as np
 
 from forecasters.Forecaster import Forecaster
 
-# 1450 and 20
+# 1450 and 1580
 class PopularityForecaster(Forecaster):
     def __init__(self, history, horizon, one_hot=False):
         super().__init__(horizon)

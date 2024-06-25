@@ -47,7 +47,9 @@ class RecommenderForecaster(Forecaster):
             result = result/np.sum(result)  # Normalize the result vector
 
         if self.one_hot is True:
-            return (np.max(result) == result).astype(np.float_)
+            result = (np.max(result) == result).astype(np.float_)
+            assert np.sum(result) == 1
+            return result
 
         return result
 
