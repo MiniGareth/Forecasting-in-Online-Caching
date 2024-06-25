@@ -51,7 +51,7 @@ def find_popularity_grid_search_movielens(library_size=None, one_hot=False, fore
     test_vecs = utils.convert_to_vectors(test, library_size)
 
     hyper_params = {
-        "horizon": np.arange(100, len(validation), 100),
+        "horizon": np.arange(10, len(validation), 10),
         "one_hot": [one_hot]
     }
     best_params, best_val_utility = grid_search_popularity(train_vecs, val_vecs, hyper_params, 0, forecaster_type=forecaster_type)
@@ -79,8 +79,8 @@ def find_popularity_grid_search_movielens(library_size=None, one_hot=False, fore
     print(f"Test Utility: {total_utility}")
 
 if __name__ == "__main__":
-    # find_popularity_grid_search_movielens(100, False)
-    # find_popularity_grid_search_movielens(100, True)
+    find_popularity_grid_search_movielens(100, False)
+    find_popularity_grid_search_movielens(100, True)
 
-    find_popularity_grid_search_movielens(100, False, forecaster_type="des")
-    find_popularity_grid_search_movielens(100, True, forecaster_type="des")
+    # find_popularity_grid_search_movielens(100, False, forecaster_type="des")
+    # find_popularity_grid_search_movielens(100, True, forecaster_type="des")

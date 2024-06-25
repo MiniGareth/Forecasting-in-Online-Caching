@@ -331,12 +331,12 @@ def test_des_movielens(library_size=100):
     val_vec = utils.convert_to_vectors(val, library_size)
     test_vec = utils.convert_to_vectors(test, library_size)
 
-    forecaster = DESForecaster(history=np.concatenate((train_vec, val_vec)), horizon=100, one_hot=True)
+    forecaster = DESForecaster(history=np.concatenate((train_vec, val_vec)), horizon=1200, one_hot=True)
 
     score, predictions = test_forecaster_score(forecaster, test_vec)
 
     print("================================================================================")
-    print("Most Frequently Requested Forecaster:")
+    print("Double Exponential Smoothing  Forecaster:")
     print(f"Library size: {library_size}, Request num: {len(test)}, History num: {len(train) + len(val)}")
     print(f"Average Utility: {score / len(test):.5f}")
 
@@ -354,5 +354,5 @@ if __name__ == "__main__":
     # test_tcn_movielens_darts()
     # test_mfr_foreccaster()
     # test_tcn_forecaster()
-    test_des_movielens()
+    test_des_movielens(library_size=100)
     pass
