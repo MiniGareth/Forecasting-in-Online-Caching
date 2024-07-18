@@ -63,7 +63,7 @@ class GenericTemporalConvNet(nn.Module):
                     y_ = y_.cuda()
                 optimizer.zero_grad()
                 output = self(x_)
-                loss = loss_function(output.float(), y_.float())
+                loss = loss_function(output, y_)
                 loss.backward()
                 if clip > 0:
                     torch.nn.utils.clip_grad_norm_(self.parameters(), clip)

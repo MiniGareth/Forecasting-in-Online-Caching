@@ -1,16 +1,13 @@
 # Press the green button in the gutter to run the script.
+from matplotlib import pyplot as plt
+from pathlib import Path
 import datetime
 import random
 import time
-
 import pandas as pd
-from statsmodels.tsa.arima.model import ARIMA
-
 import numpy as np
-from matplotlib import pyplot as plt
-
 import utils
-from forecasters.ArimaForecaster import ArimaForecaster
+
 from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
@@ -20,10 +17,10 @@ from forecasters.TCNForecaster import TCNForecaster
 from forecasters.ZeroForecaster import ZeroForecaster
 from oftrl import OFTRL
 from plotters import plot_cummulative_regret, plot_average_regret
-from recommender.kNNRecommender import kNNRecommender
 
-tables_folder = "tables"
-new_plots_folder = "new_plots"
+root_dir = Path(".").resolve()
+tables_folder = root_dir / "tables"
+new_plots_folder = root_dir / "new_plots"
 forecaster_seed = 10
 oftrl_seed = 11
 
@@ -134,7 +131,7 @@ def oftrl_diff_predict_acc(cache_size, library_size, num_of_requests, history_si
         print(regret_list)
         plot_average_regret(regret_list, title=f"{distribution[0].upper()+distribution[1:]} requests with C = {cache_size}, L = {library_size}", label=f"Accuracy {acc}")
     plt.legend(loc="upper right")
-    plt.savefig(f"{new_plots_folder}/{datetime.datetime.now().strftime('%d%b%y%H%M')}_Regret per accuracy_C-{cache_size}_L-{library_size}_H-{0}_N-{num_of_requests}_{distribution}.png")
+    plt.savefig(str(root_dir / f"{new_plots_folder}" / f"{datetime.datetime.now().strftime('%d%b%y%H%M')}_Regret per accuracy_C-{cache_size}_L-{library_size}_H-{0}_N-{num_of_requests}_{distribution}.png"))
     plt.show()
     plt.close()
 
@@ -211,14 +208,14 @@ def graph_oftrl_regret(forecasters_options, distribution_options, cache_size, li
     filename = f"{datetime.datetime.now().strftime('%d%b%y%H%M')}_C-{cache_size}_L-{library_size}_H-{history_size}_N-{num_of_requests}_{distribution_options}"
     plt.title(f"{distribution_options} requests with C = {cache_size}, L = {library_size}, H ={history_size}")
     plt.legend(loc="upper right")
-    plt.savefig(f"{new_plots_folder}/{filename}.png")
+    plt.savefig(str(root_dir / f"{new_plots_folder}" / f"{filename}.png"))
     plt.show()
     plt.close()
     # Save data into csv
     df = pd.DataFrame(regret_list_list, index=forecasters_options)
     df = df.T
     print(df)
-    df.to_csv(f"{tables_folder}/{filename}.csv")
+    df.to_csv(str(root_dir / f"{tables_folder}" / f"{filename}.csv"))
 
 def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_limit=None, num_of_requests=None, history_percentage=None):
     print("========================================================================")
@@ -275,12 +272,11 @@ def graph_oftrl_regret_movielens(forecasters_options, path, cache_size, library_
     df = pd.DataFrame(regret_list_list, index=forecasters_options)
     df = df.T
     print(df)
-    df.to_csv(f"{tables_folder}/{filename}.csv")
+    df.to_csv(str(root_dir / f"{tables_folder}" / f"{filename}.csv"))
 
     plt.title(f"Movielens requests with C = {cache_size}, L = {library_limit}, H ={history_percentage}")
     plt.legend(loc="upper right")
-    plt.savefig(
-        f"{new_plots_folder}/{filename}.png")
+    plt.savefig(str(root_dir / f"{new_plots_folder}" / f"{filename}.png"))
     plt.show()
     plt.close()
 
@@ -301,6 +297,6 @@ if __name__ == '__main__':
     # graph_oftrl_regret(["random", "naive", "mfr", "recommender", "parrot"], "normal",
     #                    5, 100, 300, 1700)
 
-    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "recommender one-hot", "tcn", "tcn one-hot", "zero", "parrot"], "ml-latest-small", 5, 100)
+    graph_oftrl_regret_movielens(["random", "naive", "mfr","recommender", "recommender one-hot", "tcn", "tcn one-hot", "zero", "parrot"], str(root_dir / "ml-latest-small"), 5, 100)
 
     print("Total time taken: " + str(int(time.time() * 1000 - start_time)) + "ms")

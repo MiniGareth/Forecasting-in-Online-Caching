@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -8,9 +9,9 @@ import utils
 
 
 class MovieLensDataset(Dataset):
-    def __init__(self, path, library_limit=1000, request_limit=None, horizon=128, split="train", transform=None,
-                 target_transform=None, mode="classification"):
-        ratings = pd.read_csv(os.path.join(path + "ratings.csv"))
+    def __init__(self, path: Path, library_limit=1000, request_limit=None, horizon=128, split="train", transform=None,
+                 target_transform=None):
+        ratings = pd.read_csv(str(path / "ratings.csv"))
         library = np.array(ratings["movieId"].value_counts().reset_index())[:library_limit, 0]
 
         # Get movie requests based on time
@@ -45,7 +46,6 @@ class MovieLensDataset(Dataset):
         self.horizon = horizon
         self.transform = transform
         self.target_transform = target_transform
-        self.mode = mode
 
     def __len__(self):
         return len(self.labels)
@@ -57,11 +57,6 @@ class MovieLensDataset(Dataset):
         requests = np.concatenate((np.zeros((self.data.shape[0], -1* past_idx if past_idx < 0 else 0)),
                                    self.data[:, np.maximum(0, past_idx):idx + 1]), axis=1)
         label = self.labels[idx]
-
-        if self.mode == "mse":
-            temp = np.zeros(self.library_size)
-            temp[label] = 1
-            label = temp
 
         if self.transform:
             requests = self.transform(requests)
