@@ -1,12 +1,13 @@
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
-import plotters
+import sys
 
 root_dir = Path(".").resolve()
+sys.path.append(str(root_dir.absolute()))
+
+import plotters
 
 # Plot average regret over time in linear and logarithmic scale
 regret_df1 = pd.read_csv(str(root_dir / "tables" / "19Jun241532_C-5_L-100_H-14566_N-1619_MovieLens.csv"), index_col=0)

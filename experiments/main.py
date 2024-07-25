@@ -6,8 +6,13 @@ import random
 import time
 import pandas as pd
 import numpy as np
-import utils
 
+import sys
+
+root_dir = Path(".").resolve()
+sys.path.append(str(root_dir.absolute()))
+
+import utils
 from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
@@ -18,7 +23,6 @@ from forecasters.ZeroForecaster import ZeroForecaster
 from oftrl import OFTRL
 from plotters import plot_cummulative_regret, plot_average_regret
 
-root_dir = Path(".").resolve()
 tables_folder = root_dir / "tables"
 new_plots_folder = root_dir / "new_plots"
 forecaster_seed = 10

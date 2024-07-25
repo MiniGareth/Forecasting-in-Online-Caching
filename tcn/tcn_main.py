@@ -1,14 +1,15 @@
 from pathlib import Path
-
 import torch
 from torch import nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+import sys
+
+root_dir = Path(".").resolve()
+sys.path.append(str(root_dir.absolute()))
 
 from dataset.MovieLensDataset import MovieLensDataset
 from tcn.models import TemporalConvNet
-
-root_dir = Path(".").resolve()
 
 def test_model(model, test_loader):
     """
@@ -269,6 +270,6 @@ def test_tcn_movielens():
     test_model(model, test_loader)
 
 if __name__ == "__main__":
-    # train_test_tcn_movielens(100, None)
+    train_test_tcn_movielens(10, None)
     # find_tcn_grid_search_movielens(100, None)
-    test_tcn_movielens()
+    # test_tcn_movielens()

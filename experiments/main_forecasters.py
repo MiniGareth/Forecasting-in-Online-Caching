@@ -1,9 +1,12 @@
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
-import utils
+import sys
 
+root_dir = Path(".").resolve()
+sys.path.append(str(root_dir.absolute()))
+
+import utils
 from forecasters.DESForecaster import DESForecaster
 from forecasters.PopularityForecaster import PopularityForecaster
 from forecasters.TCNForecaster import TCNForecaster
@@ -13,7 +16,6 @@ from forecasters.ParrotForecaster import ParrotForecaster
 from forecasters.RandomForecaster import RandomForecaster
 from forecasters.RecommenderForecaster import RecommenderForecaster
 
-root_dir = Path(".").resolve()
 forecaster_seed = 10
 forecaster_names = ["random", "naive", "mfr", "recommender", "recommender one-hot", "popularity", "popularity one-hot",
                     "tcn", "tcn one-hot", "des", "des on-hot", "Parrot 50"]
