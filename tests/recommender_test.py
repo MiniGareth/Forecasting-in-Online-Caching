@@ -1,11 +1,15 @@
+from pathlib import Path
 import pandas as pd
+import sys
+
+root_dir = Path(".").resolve()
+sys.path.append(str(root_dir.absolute()))
 
 from recommender.kNNRecommender import kNNRecommender
 
-
 def test_knn():
-    ratings = pd.read_csv('ml-latest-small/ml-latest-small/ratings.csv')
-    movies = pd.read_csv('ml-latest-small/ml-latest-small/movies.csv')
+    ratings = pd.read_csv(str(root_dir / "ml-latest-small" / "ml-latest-small" / "ratings.csv"))
+    movies = pd.read_csv(str(root_dir / "ml-latest-small" / "ml-latest-small" / 'movies.csv'))
 
     print(ratings.head(10))
     recommender = kNNRecommender(10)
