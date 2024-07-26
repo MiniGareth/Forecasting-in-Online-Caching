@@ -11,8 +11,8 @@ class ArimaForecaster(Forecaster):
         self.arima_params = (p, d, q)
 
         # Convert history of vectors into history of file ids.
-        history = [np.where(v == 1)[0][0] for v in history_vec]
-        self.arima_model = ARIMA(history, order=self.arima_params)
+        self.history = [np.where(v == 1)[0][0] for v in history_vec]
+        self.arima_model = ARIMA(self.history, order=self.arima_params)
 
         self.arima_results = self.arima_model.fit()
         self.prediction_nr = 0
@@ -29,11 +29,11 @@ class ArimaForecaster(Forecaster):
         return prediction_vec
 
 
-    def update(self, history_vec):
+    def update(self, req):
         if self.prediction_nr >= self.frequency:
             # Convert history of vectors into history of file ids
-            history = [np.where(v == 1)[0][0] for v in history_vec]
-            self.arima_model = ARIMA(history, order=self.arima_params)
+            self.history.append(np.where(req == 1)[0][0])
+            self.arima_model = ARIMA(self.history, order=self.arima_params)
             self.arima_results = self.arima_model.fit()
             self.forecasts = self.arima_results.forecast(self.frequency)
             self.prediction_nr = 0

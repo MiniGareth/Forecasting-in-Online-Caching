@@ -1,5 +1,4 @@
 import numpy as np
-import itertools
 import cvxpy as cp
 from forecasters.Forecaster import Forecaster
 
@@ -10,7 +9,8 @@ class OFTRL:
     Naram Mhaisen Optimistic No-Regret Algorithms for Discrete Caching
     """
 
-    def __init__(self, predictor: Forecaster, cache_size: int, library_size: int):
+    def __init__(self, predictor: Forecaster, cache_size: int, library_size: int, seed=None):
+        self.seed = seed
         # Constants
         self.cache_size = cache_size
         self.library_size = library_size
@@ -40,8 +40,11 @@ class OFTRL:
         self.cache = np.zeros(self.library_size)
         for j in range(self.cache_size):
             self.cache[j] = 1
+        if self.seed is not None:
+            np.random.seed(self.seed)
         np.random.shuffle(self.cache)
         self.cache_log.append(self.cache)
+        print(f"Cache: {self.cache}")
 
     def get_next(self, request: np.ndarray) -> np.ndarray:
         """

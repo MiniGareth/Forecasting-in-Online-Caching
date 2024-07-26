@@ -61,7 +61,9 @@ class TCNForecaster(Forecaster):
         prediction = torch.exp(output)
         prediction = prediction.cpu().detach().numpy()
         if self.one_hot is True:
-            return (np.max(prediction[0]) == prediction[0]).astype(np.float_)
+            result = (np.max(prediction[0]) == prediction[0]).astype(np.float_)
+            assert np.sum(result) == 1
+            return result
 
         return prediction[0]
 

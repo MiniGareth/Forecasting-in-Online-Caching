@@ -1,13 +1,10 @@
 # Movielens Dataset
 ml-latest-small
-tests/grid
-tests/models*
-tests/runs*
-plots
-new_plots
-tables
-tcn/grid
+untracked plots for archive
+tcn/untracked models for archive
+tcn/grid*
 runs
+final tables and graphs
 
 # PyCharm
 .idea

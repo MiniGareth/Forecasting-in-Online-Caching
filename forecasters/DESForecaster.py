@@ -3,7 +3,7 @@ import numpy as np
 from forecasters.Forecaster import Forecaster
 
 
-#horizon 1200, 100
+#horizon 1200, 1300
 class DESForecaster(Forecaster):
     def __init__(self, history, horizon, one_hot=False):
         self.history = list(history)
@@ -43,7 +43,7 @@ class DESForecaster(Forecaster):
 
     def _fit(self):
         best_loss = float("inf")
-        best_alpha = None
+        best_alpha = 0
         # Try different alphas
         for alpha in np.arange(0, 1, 0.1):
             total_loss = 0
