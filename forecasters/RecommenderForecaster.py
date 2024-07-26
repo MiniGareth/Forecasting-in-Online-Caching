@@ -1,10 +1,7 @@
-import sys
-
 import numpy as np
 import pandas as pd
 
 from forecasters.Forecaster import Forecaster
-from recommender import Recommender
 from recommender.kNNRecommender import kNNRecommender
 
 

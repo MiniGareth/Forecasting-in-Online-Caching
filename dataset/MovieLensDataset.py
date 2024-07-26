@@ -1,11 +1,10 @@
-import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 
-import utils
+import utils.utils as utils
 
 
 class MovieLensDataset(Dataset):

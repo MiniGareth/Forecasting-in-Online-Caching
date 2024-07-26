@@ -1,8 +1,4 @@
-import random
-
 import numpy as np
-
-import utils
 from forecasters.Forecaster import Forecaster
 
 class ParrotForecaster(Forecaster):

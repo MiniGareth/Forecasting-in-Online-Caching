@@ -12,7 +12,7 @@ import sys
 root_dir = Path(".").resolve()
 sys.path.append(str(root_dir.absolute()))
 
-import utils
+import utils.utils as utils
 from forecasters.MFRForecaster import MFRForecaster
 from forecasters.NaiveForecaster import NaiveForecaster
 from forecasters.ParrotForecaster import ParrotForecaster
@@ -21,7 +21,7 @@ from forecasters.RandomForecaster import RandomForecaster
 from forecasters.TCNForecaster import TCNForecaster
 from forecasters.ZeroForecaster import ZeroForecaster
 from oftrl import OFTRL
-from plotters import plot_cummulative_regret, plot_average_regret
+from utils.plotters import plot_cummulative_regret, plot_average_regret
 
 tables_folder = root_dir / "tables"
 new_plots_folder = root_dir / "new_plots"

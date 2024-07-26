@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 
 from forecasters.Forecaster import Forecaster

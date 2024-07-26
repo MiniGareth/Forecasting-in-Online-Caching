@@ -1,5 +1,4 @@
 import numpy as np
-import itertools
 import cvxpy as cp
 from forecasters.Forecaster import Forecaster
 

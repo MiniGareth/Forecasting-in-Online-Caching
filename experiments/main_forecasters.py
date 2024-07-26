@@ -6,7 +6,7 @@ import sys
 root_dir = Path(".").resolve()
 sys.path.append(str(root_dir.absolute()))
 
-import utils
+import utils.utils as utils
 from forecasters.DESForecaster import DESForecaster
 from forecasters.PopularityForecaster import PopularityForecaster
 from forecasters.TCNForecaster import TCNForecaster

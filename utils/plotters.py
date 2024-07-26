@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib as mpl
 
 def plot_cummulative_regret(regret_list, title=None):
     if title is None:
